@@ -28,6 +28,24 @@ services:
   kafka:
     image: confluentinc/cp-kafka:latest
 
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      - "kafka"
+
+  redis: #команда для выхода в шел редиса: docker exec -it redis redis-cli | команда для получения списка ключей "keys *" и удалить все ключи команда "flushall"
+    image: redis:latest
+    container_name: redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+
   # Services
   api-gateway:
     build: ./api-gateway
