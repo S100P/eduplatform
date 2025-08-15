@@ -1,4 +1,4 @@
---liquibase formatted
+--liquibase formatted sql
 
 
 -- Создание таблиц users, roles, user_roles, refresh_tokens
@@ -19,14 +19,15 @@ CREATE TABLE users (
     is_email_verified BOOLEAN DEFAULT false,
     last_login TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- Индексы
-    INDEX idx_users_email (email),
-    INDEX idx_users_username (username),
-    INDEX idx_users_active (is_active),
-    INDEX idx_users_created_at (created_at)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+--changeset s100p:1.1 (create users indexes)
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_username ON users (username);
+CREATE INDEX idx_users_active ON users (is_active);
+CREATE INDEX idx_users_created_at ON users (created_at);
+
 
 --changeset s100p:2 (create roles table)
 CREATE TABLE roles (
@@ -36,6 +37,7 @@ CREATE TABLE roles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+--changeset s100p:2.1 (insert base roles)
 -- Заполнение базовых ролей
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'System administrator with full access'),
@@ -56,10 +58,12 @@ CREATE TABLE user_roles (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE SET NULL,
 
-    UNIQUE(user_id, role_id),
-    INDEX idx_user_roles_user (user_id),
-    INDEX idx_user_roles_role (role_id)
+    UNIQUE(user_id, role_id)
 );
+
+--changeset s100p:3.1 (create user_roles indexes)
+CREATE INDEX idx_user_roles_user ON user_roles (user_id);
+CREATE INDEX idx_user_roles_role ON user_roles (role_id);
 
 
 --changeset s100p:4 (create refresh_tokens table)
@@ -71,13 +75,10 @@ CREATE TABLE refresh_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_revoked BOOLEAN DEFAULT false,
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_refresh_tokens_user (user_id),
-    INDEX idx_refresh_tokens_token (token),
-    INDEX idx_refresh_tokens_expires (expires_at)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-
-
-
-
+--changeset s100p:4.1 (create refresh_tokens indexes)
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
+CREATE INDEX idx_refresh_tokens_token ON refresh_tokens (token);
+CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens (expires_at);

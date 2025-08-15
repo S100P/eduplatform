@@ -3,7 +3,7 @@
 
 -- Создание таблиц categories, courses, course_categories, lessons
 
---changeset s100p:1 (create categories  table)
+--changeset s100p:1 (create categories table)
 CREATE TABLE categories (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
@@ -15,12 +15,15 @@ CREATE TABLE categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL,
-    INDEX idx_categories_slug (slug),
-    INDEX idx_categories_parent (parent_id),
-    INDEX idx_categories_active (is_active)
+    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
+CREATE INDEX idx_categories_slug ON categories(slug);
+CREATE INDEX idx_categories_parent ON categories(parent_id);
+CREATE INDEX idx_categories_active ON categories(is_active);
+
+-- В таблице courses храним instructor_name
+-- чтобы не делать join с User Service
 --changeset s100p:2 (create courses table)
 CREATE TABLE courses (
     id BIGSERIAL PRIMARY KEY,
@@ -61,17 +64,15 @@ CREATE TABLE courses (
     rating_count INTEGER DEFAULT 0,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- Индексы
-    INDEX idx_courses_instructor (instructor_id),
-    INDEX idx_courses_status (status),
-    INDEX idx_courses_slug (slug),
-    INDEX idx_courses_featured (is_featured),
-    INDEX idx_courses_published (published_at),
-    INDEX idx_courses_price (price),
-    FULLTEXT INDEX idx_courses_search (title, description, short_description)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_courses_instructor ON courses(instructor_id);
+CREATE INDEX idx_courses_status ON courses(status);
+CREATE INDEX idx_courses_slug ON courses(slug);
+CREATE INDEX idx_courses_featured ON courses(is_featured);
+CREATE INDEX idx_courses_published ON courses(published_at);
+CREATE INDEX idx_courses_price ON courses(price);
 
 
 --changeset s100p:3 (create course_categories table)
@@ -83,10 +84,11 @@ CREATE TABLE course_categories (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
 
-    UNIQUE(course_id, category_id),
-    INDEX idx_course_categories_course (course_id),
-    INDEX idx_course_categories_category (category_id)
+    UNIQUE(course_id, category_id)
 );
+
+CREATE INDEX idx_course_categories_course ON course_categories(course_id);
+CREATE INDEX idx_course_categories_category ON course_categories(category_id);
 
 
 --changeset s100p:4 (create lessons table)
@@ -118,11 +120,12 @@ CREATE TABLE lessons (
 
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
 
-    UNIQUE(course_id, slug),
-    INDEX idx_lessons_course (course_id),
-    INDEX idx_lessons_order (course_id, sort_order),
-    INDEX idx_lessons_published (is_published)
+    UNIQUE(course_id, slug)
 );
+
+CREATE INDEX idx_lessons_course ON lessons(course_id);
+CREATE INDEX idx_lessons_order ON lessons(course_id, sort_order);
+CREATE INDEX idx_lessons_published ON lessons(is_published);
 
 
 --changeset s100p:5 (create lesson_resources table)
@@ -137,8 +140,8 @@ CREATE TABLE lesson_resources (
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
-    INDEX idx_lesson_resources_lesson (lesson_id)
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_lesson_resources_lesson ON lesson_resources(lesson_id);
 

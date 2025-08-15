@@ -46,7 +46,7 @@ services:
       - POSTGRES_DB=analytics_db
 
   postgres-payments:
-    image: postgres:17.5-alpine3
+    image: postgres:17.5-alpine3.22
     ports:
       - "5437:5432"
     environment:

@@ -3,6 +3,7 @@
 
 -- Создание таблиц enrollments, lesson_progress, quizzes, quiz_attempts
 
+-- В enrollments дублируем course_title
 --changeset s100p:1 (create enrollments table)
 CREATE TABLE enrollments (
     id BIGSERIAL PRIMARY KEY,
@@ -36,13 +37,16 @@ CREATE TABLE enrollments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(user_id, course_id),
-    INDEX idx_enrollments_user (user_id),
-    INDEX idx_enrollments_course (course_id),
-    INDEX idx_enrollments_status (status),
-    INDEX idx_enrollments_completed (completed_at),
-    INDEX idx_enrollments_progress (progress_percentage)
+    UNIQUE(user_id, course_id)
 );
+
+--changeset s100p:1.1 (create indexes for enrollments table)
+CREATE INDEX idx_enrollments_user ON enrollments (user_id);
+CREATE INDEX idx_enrollments_course ON enrollments (course_id);
+CREATE INDEX idx_enrollments_status ON enrollments (status);
+CREATE INDEX idx_enrollments_completed ON enrollments (completed_at);
+CREATE INDEX idx_enrollments_progress ON enrollments (progress_percentage);
+
 
 --changeset s100p:2 (create lesson_progress table)
 CREATE TABLE lesson_progress (
@@ -63,19 +67,21 @@ CREATE TABLE lesson_progress (
 
     -- Дополнительные данные
     notes TEXT, -- заметки студента
-    bookmarks JSON, -- закладки в видео (временные метки)
+    bookmarks JSONB, -- закладки в видео (временные метки)
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE CASCADE,
 
-    UNIQUE(enrollment_id, lesson_id),
-    INDEX idx_lesson_progress_enrollment (enrollment_id),
-    INDEX idx_lesson_progress_user (user_id),
-    INDEX idx_lesson_progress_status (status),
-    INDEX idx_lesson_progress_completed (completed_at)
+    UNIQUE(enrollment_id, lesson_id)
 );
+
+--changeset s100p:2.1 (create indexes for lesson_progress table)
+CREATE INDEX idx_lesson_progress_enrollment ON lesson_progress (enrollment_id);
+CREATE INDEX idx_lesson_progress_user ON lesson_progress (user_id);
+CREATE INDEX idx_lesson_progress_status ON lesson_progress (status);
+CREATE INDEX idx_lesson_progress_completed ON lesson_progress (completed_at);
 
 
 --changeset s100p:3 (create quizzes table)
@@ -85,13 +91,14 @@ CREATE TABLE quizzes (
     course_id BIGINT,
     title VARCHAR(200) NOT NULL,
     description TEXT,
-    questions JSON NOT NULL, -- структура вопросов в JSON
+    questions JSONB NOT NULL, -- структура вопросов в JSONB
     passing_score INTEGER DEFAULT 70, -- минимальный балл для прохождения
     max_attempts INTEGER DEFAULT 3,
     time_limit INTEGER, -- лимит времени в минутах
     is_required BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    -- Примечание: Внешний ключ к таблице 'lessons'. Убедитесь, что таблица 'lessons' создана.
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 );
 
@@ -104,7 +111,7 @@ CREATE TABLE quiz_attempts (
     enrollment_id BIGINT NOT NULL,
 
     -- Результаты
-    answers JSON NOT NULL, -- ответы пользователя
+    answers JSONB NOT NULL, -- ответы пользователя
     score INTEGER NOT NULL, -- набранный балл
     max_score INTEGER NOT NULL, -- максимальный возможный балл
     is_passed BOOLEAN NOT NULL,
@@ -115,14 +122,10 @@ CREATE TABLE quiz_attempts (
     time_spent INTEGER, -- время в секундах
 
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
-    FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE CASCADE,
-
-    INDEX idx_quiz_attempts_quiz (quiz_id),
-    INDEX idx_quiz_attempts_user (user_id),
-    INDEX idx_quiz_attempts_enrollment (enrollment_id)
+    FOREIGN KEY (enrollment_id) REFERENCES enrollments(id) ON DELETE CASCADE
 );
 
-
-
-
-
+--changeset s100p:4.1 (create indexes for quiz_attempts table)
+CREATE INDEX idx_quiz_attempts_quiz ON quiz_attempts (quiz_id);
+CREATE INDEX idx_quiz_attempts_user ON quiz_attempts (user_id);
+CREATE INDEX idx_quiz_attempts_enrollment ON quiz_attempts (enrollment_id);

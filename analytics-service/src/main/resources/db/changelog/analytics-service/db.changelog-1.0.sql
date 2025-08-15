@@ -23,14 +23,13 @@ CREATE TABLE user_activity_logs (
     metadata JSON, -- дополнительная информация о событии
     duration INTEGER, -- продолжительность сессии/действия в секундах
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX idx_activity_user (user_id),
-    INDEX idx_activity_action (action),
-    INDEX idx_activity_resource (resource_type, resource_id),
-    INDEX idx_activity_session (session_id),
-    INDEX idx_activity_created (created_at)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_activity_user ON user_activity_logs (user_id);
+CREATE INDEX idx_activity_action ON user_activity_logs (action);
+CREATE INDEX idx_activity_resource ON user_activity_logs (resource_type, resource_id);
+CREATE INDEX idx_activity_session ON user_activity_logs (session_id);
+CREATE INDEX idx_activity_created ON user_activity_logs (created_at);
 
 
 --changeset s100p:2 (create course_statistics table)
@@ -55,10 +54,10 @@ CREATE TABLE course_statistics (
     -- Обновление статистики
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(course_id, date),
-    INDEX idx_course_stats_course (course_id),
-    INDEX idx_course_stats_date (date)
+    UNIQUE(course_id, date)
 );
+CREATE INDEX idx_course_stats_course ON course_statistics (course_id);
+CREATE INDEX idx_course_stats_date ON course_statistics (date);
 
 
 --changeset s100p:3 (create user_learning_stats table)
@@ -82,13 +81,7 @@ CREATE TABLE user_learning_stats (
 
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(user_id, date),
-    INDEX idx_learning_stats_user (user_id),
-    INDEX idx_learning_stats_date (date)
+    UNIQUE(user_id, date)
 );
-
-
-
-
-
-
+CREATE INDEX idx_learning_stats_user ON user_learning_stats (user_id);
+CREATE INDEX idx_learning_stats_date ON user_learning_stats (date);

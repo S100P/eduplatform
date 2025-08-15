@@ -13,12 +13,11 @@ CREATE TABLE notification_templates (
     variables JSON, -- описание доступных переменных
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX idx_templates_name (name),
-    INDEX idx_templates_type (type),
-    INDEX idx_templates_active (is_active)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_templates_type ON notification_templates (type);
+CREATE INDEX idx_templates_active ON notification_templates (is_active);
 
 
 --changeset s100p:2 (create notifications table)
@@ -58,15 +57,15 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (template_id) REFERENCES notification_templates(id) ON DELETE SET NULL,
-
-    INDEX idx_notifications_user (user_id),
-    INDEX idx_notifications_status (status),
-    INDEX idx_notifications_type (type),
-    INDEX idx_notifications_scheduled (scheduled_at),
-    INDEX idx_notifications_reference (reference_type, reference_id),
-    INDEX idx_notifications_group (notification_group)
+    FOREIGN KEY (template_id) REFERENCES notification_templates(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_notifications_user ON notifications (user_id);
+CREATE INDEX idx_notifications_status ON notifications (status);
+CREATE INDEX idx_notifications_type ON notifications (type);
+CREATE INDEX idx_notifications_scheduled ON notifications (scheduled_at);
+CREATE INDEX idx_notifications_reference ON notifications (reference_type, reference_id);
+CREATE INDEX idx_notifications_group ON notifications (notification_group);
 
 
 --changeset s100p:3 (create notification_preferences table)
@@ -94,12 +93,5 @@ CREATE TABLE notification_preferences (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(user_id),
-    INDEX idx_preferences_user (user_id)
+    UNIQUE(user_id)
 );
-
-
-
-
-
-

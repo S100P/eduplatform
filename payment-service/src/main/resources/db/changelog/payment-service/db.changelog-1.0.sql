@@ -1,4 +1,4 @@
---liquibase formatted
+--liquibase formatted sql
 
 
 -- Создание таблиц payments, payment_refunds, discount_coupons, coupon_usage
@@ -43,15 +43,15 @@ CREATE TABLE payments (
 
     -- Денормализованные данные
     course_title VARCHAR(200),
-    user_email VARCHAR(100),
-
-    INDEX idx_payments_user (user_id),
-    INDEX idx_payments_course (course_id),
-    INDEX idx_payments_status (status),
-    INDEX idx_payments_provider (payment_provider),
-    INDEX idx_payments_created (created_at),
-    INDEX idx_payments_external (external_payment_id)
+    user_email VARCHAR(100)
 );
+
+CREATE INDEX idx_payments_user ON payments (user_id);
+CREATE INDEX idx_payments_course ON payments (course_id);
+CREATE INDEX idx_payments_status ON payments (status);
+CREATE INDEX idx_payments_provider ON payments (payment_provider);
+CREATE INDEX idx_payments_created ON payments (created_at);
+CREATE INDEX idx_payments_external ON payments (external_payment_id);
 
 
 --changeset s100p:2 (create payment_refunds table)
@@ -66,10 +66,11 @@ CREATE TABLE payment_refunds (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMP,
 
-    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
-    INDEX idx_payment_refunds_payment (payment_id),
-    INDEX idx_payment_refunds_status (status)
+    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_payment_refunds_payment ON payment_refunds (payment_id);
+CREATE INDEX idx_payment_refunds_status ON payment_refunds (status);
 
 
 --changeset s100p:3 (create discount_coupons table)
@@ -90,8 +91,8 @@ CREATE TABLE discount_coupons (
     usage_count INTEGER DEFAULT 0,
 
     -- Применимость
-    applicable_courses JSON, -- массив ID курсов или null для всех
-    applicable_categories JSON, -- массив ID категорий
+    applicable_courses JSONB, -- массив ID курсов или null для всех
+    applicable_categories JSONB, -- массив ID категорий
 
     -- Даты действия
     valid_from TIMESTAMP NOT NULL,
@@ -99,12 +100,12 @@ CREATE TABLE discount_coupons (
 
     is_active BOOLEAN DEFAULT true,
     created_by BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX idx_coupons_code (code),
-    INDEX idx_coupons_active (is_active),
-    INDEX idx_coupons_dates (valid_from, valid_until)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_coupons_code ON discount_coupons (code);
+CREATE INDEX idx_coupons_active ON discount_coupons (is_active);
+CREATE INDEX idx_coupons_dates ON discount_coupons (valid_from, valid_until);
 
 
 --changeset s100p:4 (create coupon_usage table)
@@ -117,14 +118,9 @@ CREATE TABLE coupon_usage (
     used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (coupon_id) REFERENCES discount_coupons(id) ON DELETE CASCADE,
-    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
-
-    INDEX idx_coupon_usage_coupon (coupon_id),
-    INDEX idx_coupon_usage_user (user_id),
-    INDEX idx_coupon_usage_payment (payment_id)
+    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
 );
 
-
-
-
-
+CREATE INDEX idx_coupon_usage_coupon ON coupon_usage (coupon_id);
+CREATE INDEX idx_coupon_usage_user ON coupon_usage (user_id);
+CREATE INDEX idx_coupon_usage_payment ON coupon_usage (payment_id);

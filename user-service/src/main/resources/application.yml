@@ -12,12 +12,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto:  validate
     open-in-view: false # При open-in-view=false сессия Hibernate закрывается сразу после завершения транзакции в сервисном слое. (см заметки)
     show-sql: true
 
   liquibase:
     enabled: true
-    change-log: 'classpath:db/changelog/user-service/db.changelog-master.yaml'
+    change-log: classpath:db/changelog/user-service/db.changelog-master.yaml
 
  
