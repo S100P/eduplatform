@@ -1,0 +1,23 @@
+server:
+  port: 8015
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5437/payments_db
+    #url: jdbc:postgresql://host.docker.internal:5437/payments_db
+    #url: jdbc:postgresql://postgres:5437/payments_db
+    username: ${POSTGRES_USER_LOGIN}
+    password: ${POSTGRES_USER_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false # При open-in-view=false сессия Hibernate закрывается сразу после завершения транзакции в сервисном слое. (см заметки)
+    show-sql: true
+
+  liquibase:
+    enabled: true
+    change-log: 'classpath:db/changelog/payment-service/db.changelog-master.yaml'
+
+ 

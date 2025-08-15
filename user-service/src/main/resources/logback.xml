@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true">
+    <!-- Уменьшение уровня логирования для пакетов Logback -->
+    <logger name="ch.qos.logback.classic" level="ERROR"/>
+    <logger name="org.springframework.boot.logging" level="ERROR"/>
+
+    <!-- Console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>%highlight(%level) [%green(%thread)]  %yellow(%logger{36})  :  %msg%n
+            </Pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
