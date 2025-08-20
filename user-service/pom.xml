@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>user-service</artifactId>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -22,7 +23,6 @@
         <dependency>
             <groupId>ru.s100p</groupId>
             <artifactId>shared-library</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
