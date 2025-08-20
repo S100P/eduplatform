@@ -1,5 +1,6 @@
 package ru.s100p.shared.events;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
@@ -8,6 +9,7 @@ import java.util.UUID;
 
 @Data
 @SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class BaseEvent {
     private String eventId;
     private String eventType;

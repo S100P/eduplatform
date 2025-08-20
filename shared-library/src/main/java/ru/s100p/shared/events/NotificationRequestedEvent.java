@@ -3,6 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import ru.s100p.shared.constants.KafkaTopicsConstants;
 
 import java.util.Map;
 
@@ -20,6 +21,6 @@ public class NotificationRequestedEvent extends BaseEvent {
     
     public NotificationRequestedEvent() {
         super();
-        setEventType("NOTIFICATION_REQUESTED");
+        setEventType(KafkaTopicsConstants.NOTIFICATION_REQUESTED.name());
     }
 }

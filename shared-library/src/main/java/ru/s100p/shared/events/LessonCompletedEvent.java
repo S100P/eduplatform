@@ -3,6 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import ru.s100p.shared.constants.KafkaTopicsConstants;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,6 +21,6 @@ public class LessonCompletedEvent extends BaseEvent {
     
     public LessonCompletedEvent() {
         super();
-        setEventType("LESSON_COMPLETED");
+        setEventType(KafkaTopicsConstants.LESSON_COMPLETED.name());
     }
 }

@@ -3,6 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import ru.s100p.shared.constants.KafkaTopicsConstants;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -19,6 +20,6 @@ public class CourseUpdatedEvent extends BaseEvent {
     
     public CourseUpdatedEvent() {
         super();
-        setEventType("COURSE_UPDATED");
+        setEventType(KafkaTopicsConstants.COURSE_UPDATED.name());
     }
 }
