@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Databases
   postgres-users:
@@ -54,16 +56,90 @@ services:
       - POSTGRES_USER=${POSTGRES_USER_LOGIN}
       - POSTGRES_DB=payments_db
 
+  # Kafka Brokers
+  kafka-1:
+    image: apache/kafka:latest
+    hostname: kafka-1
+    container_name: eduplatform-kafka-1
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+      - "29092:29092"
+      - "29093:29093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Важно: все 3 узла в кворуме контроллера
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka-1:29092,CONTROLLER://kafka-1:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:29092,PLAINTEXT_HOST://host.docker.internal:9092,PLAINTEXT_LOCAL://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5 # Кол-во consumers не должно превышать кол-во партиций
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3 # Три копии партиций, одна в лидер-брокере (сервере) и по одной в каждой реплике лидер-брокера (если будет одна копия, она будет только в лидере). Копий не может быть больше серверов в кластере
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=DEBUG,state.change.logger=DEBUG"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+    networks:
+      - kafka-cluster
 
+  kafka-2:
+    image: apache/kafka:latest
+    hostname: kafka-2
+    container_name: eduplatform-kafka-2
+    ports:
+      - "9093:9092"  # Другой внешний порт
+      - "9095:9094"
+      - "29094:29092"  # Другой внутренний порт
+      - "29095:29093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka-2:29092,CONTROLLER://kafka-2:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29092,PLAINTEXT_HOST://host.docker.internal:9093,PLAINTEXT_LOCAL://localhost:9095
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=DEBUG,state.change.logger=DEBUG"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+    networks:
+      - kafka-cluster
 
+  kafka-3:
+    image: apache/kafka:latest
+    hostname: kafka-3
+    container_name: eduplatform-kafka-3
+    ports:
+      - "9096:9092"  # Третий внешний порт (нельзя указать 9094, т.к. он используется "снаружи" во второй строке, а 9095 уже занят во втором сервере)
+      - "9097:9094"  # Первый порт внутренний уже 9097, т.к. 9096 занят в первой строке
+      - "29096:29092"
+      - "29097:29093"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka-3:29092,CONTROLLER://kafka-3:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:29092,PLAINTEXT_HOST://host.docker.internal:9096,PLAINTEXT_LOCAL://localhost:9097
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=DEBUG,state.change.logger=DEBUG"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+    networks:
+      - kafka-cluster
 
   # Kafka Infrastructure
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-
   kafdrop:
     image: obsidiandynamics/kafdrop
     container_name: kafdrop
@@ -71,10 +147,11 @@ services:
     ports:
       - "9000:9000"
     environment:
-      KAFKA_BROKERCONNECT: "kafka:29092"
-    depends_on:
-      - "kafka"
+      KAFKA_BROKERCONNECT: "kafka-1:29092"
+    networks:
+      - kafka-cluster
 
+  # Redis db
   redis: #команда для выхода в шел редиса: docker exec -it redis redis-cli | команда для получения списка ключей "keys *" и удалить все ключи команда "flushall"
     image: redis:latest
     container_name: redis
@@ -94,3 +171,12 @@ services:
       - "8081:8081"
 
   # ... остальные сервисы
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+
+networks:
+  kafka-cluster:
+    driver: bridge
