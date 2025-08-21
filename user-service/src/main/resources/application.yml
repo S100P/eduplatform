@@ -5,6 +5,11 @@ spring:
   application:
     name: user-service
 
+  security:
+    user:
+      name: admin
+      password: admin
+
   datasource:
     url: jdbc:postgresql://localhost:5432/users_db
     #url: jdbc:postgresql://host.docker.internal:5432/users_db
@@ -41,4 +46,4 @@ spring:
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: "ru.s100p.shared.events"
- 
+
