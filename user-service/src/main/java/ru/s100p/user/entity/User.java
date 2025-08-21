@@ -52,6 +52,7 @@ public class User {
     LocalDate dateOfBirth;
 
     @Lob
+    @Column(name = "bio", columnDefinition = "TEXT")
     String bio;
 
     @Column(name = "avatar_url", length = 500)
