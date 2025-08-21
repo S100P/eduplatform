@@ -12,6 +12,7 @@ public final class ApiConstants {
     public static final String COURSES_ENDPOINT = "/courses";
     public static final String ENROLLMENTS_ENDPOINT = "/enrollments";
     public static final String PAYMENTS_ENDPOINT = "/payments";
+    public static final String TOKENS_ENDPOINT = "/tokens";
     
     // HTTP Headers
     public static final String AUTHORIZATION_HEADER = "Authorization";
