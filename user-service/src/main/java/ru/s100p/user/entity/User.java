@@ -1,25 +1,33 @@
 package ru.s100p.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "users")
-@Data
+@Table(name = "users",
+        indexes = {
+                @Index(name = "idx_users_email", columnList = "email"),
+                @Index(name = "idx_users_username", columnList = "username"),
+                @Index(name = "idx_users_active", columnList = "is_active"),
+                @Index(name = "idx_users_created_at", columnList = "created_at")
+        })
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // BIGSERIAL в Postgres
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @Column(length = 50, nullable = false, unique = true)
@@ -62,7 +70,18 @@ public class User {
     @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;
 
-    @UpdateTimestamp
+    @CreationTimestamp
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
+
+    // Связь с UserRole
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    Set<UserRole> roles = new HashSet<>();
+
+    // Связь с RefreshToken
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    Set<RefreshToken> refreshTokens = new HashSet<>();
+
 }
