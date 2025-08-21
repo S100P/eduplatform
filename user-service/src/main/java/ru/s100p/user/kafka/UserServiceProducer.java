@@ -7,7 +7,12 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import ru.s100p.shared.dto.UserDto;
 import ru.s100p.shared.events.UserRegisteredEvent;
+import ru.s100p.user.entity.Role;
 import ru.s100p.user.entity.User;
+import ru.s100p.user.entity.UserRole;
+
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Data
 @Slf4j
@@ -25,7 +30,12 @@ public class UserServiceProducer {
         event.setEmail(user.getEmail());
         event.setFirstName(user.getFirstName());
         event.setLastName(user.getLastName());
-        event.setRoles(user.getRoles());
+        event.setRoles(user.getRoles().stream()
+                .filter(Objects::nonNull)
+                .map(UserRole::getRole)
+                .filter(Objects::nonNull)
+                .map(Role::getName)
+                .collect(Collectors.toUnmodifiableSet()));
 
         kafkaTemplate.send(topicName, user.getId().toString(), event)
                 .whenComplete((result, ex) -> {
