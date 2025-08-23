@@ -1,12 +1,10 @@
 package ru.s100p.shared.events;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.util.Set;
 
@@ -26,7 +24,7 @@ public class UserRegisteredEvent extends BaseEvent {
     
     public UserRegisteredEvent() {
         super();
-        setEventType(KafkaTopicsConstants.USER_REGISTERED.name());
+        setEventType(KafkaEventTypeNames.USER_REGISTERED);
         setSourceService(sourceService);
-    }
+    } //TODO проверить насколько это обязательно, учитывая, что этот эвент публикует только один user-service и только в один топик userRegisteredTopic
 }

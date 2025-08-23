@@ -3,7 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,6 +21,6 @@ public class StudentEnrolledEvent extends BaseEvent {
     
     public StudentEnrolledEvent() {
         super();
-        setEventType(KafkaTopicsConstants.ENROLLMENT_CREATED.name());
+        setEventType(KafkaEventTypeNames.ENROLLMENT_CREATED);
     }
 }

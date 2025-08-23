@@ -3,7 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.math.BigDecimal;
 
@@ -20,6 +20,6 @@ public class CourseCreatedEvent extends BaseEvent {
     
     public CourseCreatedEvent() {
         super();
-        setEventType(KafkaTopicsConstants.COURSE_CREATED.name());
+        setEventType(KafkaEventTypeNames.COURSE_CREATED);
     }
 }

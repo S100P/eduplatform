@@ -32,7 +32,6 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092, localhost:9093 # Указываем второго брокера (сервера) на случай отказа первого
     producer:
-      topic.name: user-registered
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: all

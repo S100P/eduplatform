@@ -3,7 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.math.BigDecimal;
 
@@ -22,6 +22,6 @@ public class PaymentProcessedEvent extends BaseEvent {
     
     public PaymentProcessedEvent() {
         super();
-        setEventType(KafkaTopicsConstants.PAYMENT_PROCESSED.name());
+        setEventType(KafkaEventTypeNames.PAYMENT_PROCESSED);
     }
 }

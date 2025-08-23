@@ -3,7 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.util.Map;
 
@@ -19,6 +19,6 @@ public class UserProfileUpdatedEvent extends BaseEvent {
     
     public UserProfileUpdatedEvent() {
         super();
-        setEventType(KafkaTopicsConstants.USER_PROFILE_UPDATED.name());
+        setEventType(KafkaEventTypeNames.USER_PROFILE_UPDATED);
     }
 }

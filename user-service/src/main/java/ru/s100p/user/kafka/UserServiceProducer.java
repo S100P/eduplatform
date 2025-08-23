@@ -2,10 +2,8 @@ package ru.s100p.user.kafka;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import ru.s100p.shared.dto.UserDto;
 import ru.s100p.shared.events.UserRegisteredEvent;
 import ru.s100p.user.entity.Role;
 import ru.s100p.user.entity.User;
@@ -14,13 +12,12 @@ import ru.s100p.user.entity.UserRole;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static ru.s100p.shared.constants.KafkaTopicNames.USER_REGISTERED_TOPIC;
+
 @Data
 @Slf4j
 @Component
 public class UserServiceProducer {
-
-    @Value("${spring.kafka.producer.topic.name}")
-    private String topicName;
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -37,7 +34,7 @@ public class UserServiceProducer {
                 .map(Role::getName)
                 .collect(Collectors.toUnmodifiableSet()));
 
-        kafkaTemplate.send(topicName, user.getId().toString(), event)
+        kafkaTemplate.send(USER_REGISTERED_TOPIC, user.getId().toString(), event)
                 .whenComplete((result, ex) -> {
                     if (ex == null) {
                         log.info("User registered event sent successfully: {}", event.getEventId());

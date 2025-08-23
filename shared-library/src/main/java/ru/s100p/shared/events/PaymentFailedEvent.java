@@ -3,7 +3,7 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import ru.s100p.shared.constants.KafkaTopicsConstants;
+import ru.s100p.shared.constants.KafkaEventTypeNames;
 
 import java.math.BigDecimal;
 
@@ -20,6 +20,6 @@ public class PaymentFailedEvent extends BaseEvent {
     
     public PaymentFailedEvent() {
         super();
-        setEventType(KafkaTopicsConstants.PAYMENT_FAILED.name());
+        setEventType(KafkaEventTypeNames.PAYMENT_FAILED);
     }
 }
