@@ -11,8 +11,10 @@ import ru.s100p.user.service.UserService;
 import java.net.URI;
 import java.util.List;
 
+import static ru.s100p.shared.constants.ApiConstants.*;
+
 @RestController
-@RequestMapping(ApiConstants.API_V1+ApiConstants.USERS_ENDPOINT)
+@RequestMapping(API_V1 + USERS_ENDPOINT)
 @RequiredArgsConstructor
 public class UserController {
 

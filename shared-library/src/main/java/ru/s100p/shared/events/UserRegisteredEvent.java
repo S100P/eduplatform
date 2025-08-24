@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import ru.s100p.shared.constants.KafkaEventTypeNames;
+import ru.s100p.shared.constants.KafkaServiceNames;
 
 import java.util.Set;
 
@@ -19,12 +20,12 @@ public class UserRegisteredEvent extends BaseEvent {
     private String lastName;
     private Set<String> roles;
 
-    @Value("${spring.application.name}")
-    private String sourceService;
-    
+
+    // Установка метаданных события
     public UserRegisteredEvent() {
         super();
         setEventType(KafkaEventTypeNames.USER_REGISTERED);
-        setSourceService(sourceService);
-    } //TODO проверить насколько это обязательно, учитывая, что этот эвент публикует только один user-service и только в один топик userRegisteredTopic
+        setSourceService(KafkaServiceNames.USER_SERVICE);
+        setCorrelationId(String.valueOf(userId));
+    }
 }

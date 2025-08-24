@@ -3,13 +3,19 @@ package ru.s100p.user.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import ru.s100p.shared.constants.ErrorCodes;
+import ru.s100p.shared.constants.SecurityConstants;
 import ru.s100p.shared.dto.UserDto;
+import ru.s100p.shared.exceptions.BusinessException;
+import ru.s100p.user.dto.request.RegisterRequest;
 import ru.s100p.user.entity.Role;
 import ru.s100p.user.entity.User;
 import ru.s100p.user.entity.UserRole;
+import ru.s100p.user.kafka.UserServiceProducer;
 import ru.s100p.user.mapper.UserMapper;
 import ru.s100p.user.repository.RoleRepository;
 import ru.s100p.user.repository.UserRepository;
@@ -25,6 +31,33 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserServiceProducer userServiceProducer;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public UserDto registerUser(RegisterRequest request) {
+        // Проверка на существование
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Email уже используется", ErrorCodes.USER_ALREADY_EXISTS);
+        }
+
+        // Создание пользователя
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setUsername(request.getUsername());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+
+        // Назначение роли по умолчанию
+        User savedUser = userRepository.save(user);
+        assignRole(savedUser.getId(), SecurityConstants.ROLE_STUDENT);
+
+        // Публикация события
+        userServiceProducer.publishUserRegistered(savedUser);
+
+        return UserMapper.toDto(savedUser);
+    }
 
     @Transactional(readOnly = true)
     public UserDto getUserById(Long id) {

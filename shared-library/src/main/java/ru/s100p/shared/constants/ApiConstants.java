@@ -6,7 +6,9 @@ public final class ApiConstants {
     
     // API versions
     public static final String API_V1 = "/api/v1";
-    
+    public static final String API_V1_INSTRUCTOR = "/api/v1/instructor";
+    public static final String API_V1_ADMIN = "/api/v1/admin";
+
     // Common endpoints
     public static final String USERS_ENDPOINT = "/users";
     public static final String COURSES_ENDPOINT = "/courses";
