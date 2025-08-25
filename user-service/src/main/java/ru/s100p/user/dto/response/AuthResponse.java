@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.s100p.shared.constants.ApiConstants;
 import ru.s100p.shared.dto.UserDto;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,7 @@ public class AuthResponse {
 
     private String accessToken;
     private String refreshToken;
-    private String tokenType = "Bearer";
+    private String tokenType = ApiConstants.BEARER_PREFIX;
     private Long expiresIn; // в секундах
     private LocalDateTime issuedAt;
     private UserDto user;

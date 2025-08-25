@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ru.s100p.shared.constants.SecurityConstants;
+import ru.s100p.user.security.CustomAccessDeniedHandler;
 import ru.s100p.user.security.JwtAuthenticationEntryPoint;
 import ru.s100p.user.security.JwtAuthenticationFilter;
 
@@ -47,6 +48,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     // Сервис для загрузки пользовательских данных
     private final UserDetailsService userDetailsService;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     // Массив публичных URL-адресов, доступных без аутентификации
     private static final String[] PUBLIC_URLS = {
@@ -85,6 +87,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         // Устанавливает точку входа для обработки ошибок аутентификации
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 // Настройка управления сессиями
                 .sessionManagement(session -> session

@@ -27,18 +27,13 @@ public class UserController {
 
     @GetMapping("/{id}")
     public UserDto getUser(@PathVariable Long id) {
-        return userService.getUserById(id);
+        return userService.getUserById(id, id);
     }
 
-    @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody User user) {
-        UserDto dto = userService.createUser(user);
-        return ResponseEntity.created(URI.create("/api/users/" + dto.id())).body(dto);
-    }
 
     @PostMapping("/{id}/roles/{roleName}")
-    public ResponseEntity<Void> assignRole(@PathVariable Long id, @PathVariable String roleName) {
-        userService.assignRole(id, roleName);
+    public ResponseEntity<Void> assignRole(@PathVariable Long id, @PathVariable String roleName, @PathVariable Long assignedBy) {
+        userService.assignRole(id, roleName, assignedBy);
         return ResponseEntity.ok().build();
     }
 

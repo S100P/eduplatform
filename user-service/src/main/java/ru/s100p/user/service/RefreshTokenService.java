@@ -53,5 +53,10 @@ public class RefreshTokenService {
                 .map(RefreshTokenMapper::toDto)
                 .toList();
     }
+
+    public RefreshToken validateAndGetToken(String refreshToken) {
+        return refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new EntityNotFoundException("Token not found"));
+    }
 }
 
