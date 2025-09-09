@@ -66,6 +66,7 @@ services:
       - "29092:29092"
       - "29093:29093"
     environment:
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true' # Необходимо для контроля над созданием топиков через New Topic, при true брокер автоматически создаст топик в следующих случаях: 1.Когда producer пытается отправить сообщение в несуществующий топик. 2.Когда consumer (как ваш @KafkaListener) пытается подключиться к несуществующему топику.
       KAFKA_BROKER_ID: 1
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
@@ -73,7 +74,7 @@ services:
       # Важно: все 3 узла в кворуме контроллера
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
       KAFKA_LISTENERS: PLAINTEXT://kafka-1:29092,CONTROLLER://kafka-1:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:29092,PLAINTEXT_HOST://host.docker.internal:9092,PLAINTEXT_LOCAL://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:29092,PLAINTEXT_HOST://localhost:9092,PLAINTEXT_LOCAL://localhost:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5 # Кол-во consumers не должно превышать кол-во партиций
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3 # Три копии партиций, одна в лидер-брокере (сервере) и по одной в каждой реплике лидер-брокера (если будет одна копия, она будет только в лидере). Копий не может быть больше серверов в кластере
@@ -94,13 +95,14 @@ services:
       - "29094:29092"  # Другой внутренний порт
       - "29095:29093"
     environment:
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_BROKER_ID: 2
       KAFKA_NODE_ID: 2
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
       KAFKA_LISTENERS: PLAINTEXT://kafka-2:29092,CONTROLLER://kafka-2:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29092,PLAINTEXT_HOST://host.docker.internal:9093,PLAINTEXT_LOCAL://localhost:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29092,PLAINTEXT_HOST://localhost:9093,PLAINTEXT_LOCAL://localhost:9095
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -121,13 +123,14 @@ services:
       - "29096:29092"
       - "29097:29093"
     environment:
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_BROKER_ID: 3
       KAFKA_NODE_ID: 3
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
       KAFKA_LISTENERS: PLAINTEXT://kafka-3:29092,CONTROLLER://kafka-3:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_LOCAL://127.0.0.1:9094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:29092,PLAINTEXT_HOST://host.docker.internal:9096,PLAINTEXT_LOCAL://localhost:9097
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:29092,PLAINTEXT_HOST://localhost:9096,PLAINTEXT_LOCAL://localhost:9097
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 5
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -151,25 +154,25 @@ services:
       - kafka-cluster
 
   # Redis db
-  redis: #команда для выхода в шел редиса: docker exec -it redis redis-cli | команда для получения списка ключей "keys *" и удалить все ключи команда "flushall"
-    image: redis:latest
-    container_name: redis
-    hostname: redis
-    ports:
-      - "6379:6379"
-
-  # Services
-  api-gateway:
-    build: ./api-gateway
-    ports:
-      - "8080:8080"
-
-  user-service:
-    build: ./user-service
-    ports:
-      - "8081:8081"
-
-  # ... остальные сервисы
+#  redis: #команда для выхода в шел редиса: docker exec -it redis redis-cli | команда для получения списка ключей "keys *" и удалить все ключи команда "flushall"
+#    image: redis:latest
+#    container_name: redis
+#    hostname: redis
+#    ports:
+#      - "6379:6379"
+#
+#  # Services
+#  api-gateway:
+#    build: ./api-gateway
+#    ports:
+#      - "8080:8080"
+#
+#  user-service:
+#    build: ./user-service
+#    ports:
+#      - "8081:8081"
+#
+#  # ... остальные сервисы
 
 volumes:
   kafka-1-data:
