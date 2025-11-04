@@ -20,7 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import ru.s100p.shared.constants.SecurityConstants;
 import ru.s100p.user.security.CustomAccessDeniedHandler;
 import ru.s100p.user.security.JwtAuthenticationEntryPoint;
 import ru.s100p.user.security.JwtAuthenticationFilter;
