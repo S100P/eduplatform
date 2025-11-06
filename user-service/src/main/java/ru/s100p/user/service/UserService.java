@@ -260,6 +260,29 @@ public class UserService {
         log.info("Роль {} успешно отозвана у пользователя {}", roleName, userId);
     }
 
+//    TODO добавить создание объекта peageble,чтобы в контроллере были только параметры страницы в инте
+//     /**
+//     * Метод для поиска пользователей по текстовому запросу.
+//     * @param searchTerm строка для поиска
+//     * @param pageNumber номер страницы (начиная с 0)
+//     * @param pageSize количество пользователей на странице
+//     * @return страница с найденными пользователями
+//    public Page<User> search(String searchTerm, int pageNumber, int pageSize) {
+//
+//        // 1. Создаем объект Pageable для пагинации и сортировки.
+//        //    - pageNumber: номер страницы, которую мы хотим получить.
+//        //    - pageSize: сколько записей будет на этой странице.
+//        //    - Sort.by("username"): указываем, что результаты нужно отсортировать по полю 'username'.
+//        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("username").ascending());
+//
+//        // 2. Вызываем метод репозитория, передавая ему поисковый запрос и объект Pageable.
+//        //    Здесь мы ищем пользователей, у которых в одном из полей есть слово "admin".
+//        //    Мы хотим получить первую страницу (индекс 0), на которой будет 10 пользователей.
+//        Page<User> foundUsers = userRepository.searchUsers(searchTerm, pageable);
+//
+//        return foundUsers;
+//    }*/
+
     /**
      * Поиск пользователей с пагинацией и фильтрацией
      */
