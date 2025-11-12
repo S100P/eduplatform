@@ -22,18 +22,39 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Создает и сохраняет в базе данных новый refresh-токен для указанного пользователя.
+     *
+     * <p>Этот метод не создает JWT, а генерирует уникальную строку (UUID),
+     * которая будет служить в качестве refresh-токена. Этот токен сохраняется в базе данных
+     * с привязкой к пользователю, временем создания и временем истечения срока действия.
+     * Он может быть использован в дальнейшем для получения новой пары access и refresh токенов.</p>
+     *
+     * @param userId ID пользователя, для которого создается токен.
+     * @param expiresInSeconds Время жизни токена в секундах.
+     * @return DTO созданного refresh-токена.
+     * @throws EntityNotFoundException если пользователь с указанным ID не найден.
+     */
     @Transactional
     public RefreshTokenDto createToken(Long userId, long expiresInSeconds) {
+        // 1. Находим пользователя в базе данных по его ID.
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
 
+        // 2. Создаем новый объект RefreshToken.
         RefreshToken token = new RefreshToken();
+        // 3. Привязываем токен к найденному пользователю.
         token.setUser(user);
+        // 4. Генерируем уникальное значение для токена с помощью UUID.
         token.setToken(UUID.randomUUID().toString());
+        // 5. Устанавливаем текущее время как время создания токена.
         token.setCreatedAt(LocalDateTime.now());
+        // 6. Вычисляем и устанавливаем время истечения срока действия токена.
         token.setExpiresAt(LocalDateTime.now().plusSeconds(expiresInSeconds));
+        // 7. Устанавливаем флаг, что токен не отозван.
         token.setIsRevoked(false);
 
+        // 8. Сохраняем токен в базе данных и преобразуем его в DTO для ответа.
         return RefreshTokenMapper.toDto(refreshTokenRepository.save(token));
     }
 
@@ -59,4 +80,3 @@ public class RefreshTokenService {
                 .orElseThrow(() -> new EntityNotFoundException("Token not found"));
     }
 }
-

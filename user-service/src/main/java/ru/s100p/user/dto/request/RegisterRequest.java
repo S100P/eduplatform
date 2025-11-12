@@ -49,6 +49,7 @@ public class RegisterRequest {
     private String avatarUrl;
 
     // Роль по умолчанию будет STUDENT, но можно указать при создании инструктора
+    @Builder.Default
     private String requestedRole = "STUDENT";
 
     // Согласие с условиями использования

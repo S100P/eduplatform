@@ -38,6 +38,7 @@ public class AuthController {
         UserDto user = userService.registerUser(request);
         AuthResponse authResponse = authService.generateAuthResponse(user);
 
+        //см файл шпаргалку в корень проекта
         ApiResponse<AuthResponse> response = ApiResponse.<AuthResponse>builder()
                 .success(true)
                 .message("Пользователь успешно зарегистрирован")

@@ -22,15 +22,16 @@ import java.util.stream.Collectors;
 @Component
 public class JwtService {
 
-    @Value("${jwt.secret:mySecretKey12345678901234567890123456789012345678901234567890}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:3600000}") // 1 час в миллисекундах
+    @Value("${jwt.expiration}") // 1 час в миллисекундах
     private int jwtExpirationMs;
 
-    @Value("${jwt.refresh.expiration:604800000}") // 7 дней в миллисекундах
+    @Value("${jwt.refresh.expiration}") // 7 дней в миллисекундах
     private int refreshExpirationMs;
 
+    //TODO дописать сюда док и комменты, что делает метод
     /**
      * Генерация access токена
      */
@@ -57,18 +58,45 @@ public class JwtService {
     }
 
     /**
-     * Создание токена
+     * Создание и подпись JWT токена.
+     *
+     * <p>Процесс подписи:</p>
+     * <p>Подпись токена происходит с помощью вызова {@code .signWith(getSignKey(), SignatureAlgorithm.HS512)}.</p>
+     * <ol>
+     *     <li><b>signWith(...)</b>: Метод из библиотеки JJWT, который отвечает за подпись JWT токена.</li>
+     *     <li><b>getSignKey()</b>: Внутренний метод, который предоставляет ключ для подписи. Он декодирует секретную строку (jwtSecret) из Base64 и создает на ее основе ключ для HMAC-SHA алгоритма.</li>
+     *     <li><b>SignatureAlgorithm.HS512</b>: Алгоритм шифрования (HMAC с использованием SHA-512), который используется для создания подписи.</li>
+     * </ol>
+     *
+     * <p>Как это обеспечивает аутентификацию?</p>
+     * <p>Когда сервер получает токен, он заново вычисляет подпись, используя тот же секретный ключ. Если вычисленная подпись совпадает с подписью в токене, это доказывает, что:</p>
+     * <ul>
+     *     <li>Токен был выдан именно этим сервером (т.к. только он знает секрет).</li>
+     *     <li>Данные в токене не были изменены после его выдачи.</li>
+     * </ul>
+     * <p>Проверка подписи реализована в методе {@code validateToken}.</p>
+     *
+     * @param claims Дополнительные данные (полезная нагрузка), которые будут добавлены в токен.
+     * @param subject "Тема" токена, обычно это имя пользователя.
+     * @param expirationMs Время жизни токена в миллисекундах.
+     * @return Строковое представление JWT токена.
      */
     private String createToken(Map<String, Object> claims, String subject, int expirationMs) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
+                // Установка полезной нагрузки (claims)
                 .setClaims(claims)
+                // Установка "темы" токена (обычно username)
                 .setSubject(subject)
+                // Установка времени создания токена
                 .setIssuedAt(now)
+                // Установка времени истечения срока действия токена
                 .setExpiration(expiryDate)
+                // Подпись токена с использованием секретного ключа и алгоритма HS512
                 .signWith(getSignKey(), SignatureAlgorithm.HS512)
+                // Сборка и сериализация токена в компактную строку (JWS)
                 .compact();
     }
 
