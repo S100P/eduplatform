@@ -3,7 +3,6 @@ package ru.s100p.shared.events;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.springframework.beans.factory.annotation.Value;
 import ru.s100p.shared.constants.KafkaEventTypeNames;
 import ru.s100p.shared.constants.KafkaServiceNames;
 

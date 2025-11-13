@@ -3,15 +3,13 @@ package ru.s100p.user.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.s100p.shared.constants.ApiConstants;
 import ru.s100p.shared.dto.UserDto;
-import ru.s100p.user.entity.User;
 import ru.s100p.user.service.UserService;
 
-import java.net.URI;
 import java.util.List;
 
-import static ru.s100p.shared.constants.ApiConstants.*;
+import static ru.s100p.shared.constants.ApiConstants.API_V1;
+import static ru.s100p.shared.constants.ApiConstants.USERS_ENDPOINT;
 
 @RestController
 @RequestMapping(API_V1 + USERS_ENDPOINT)

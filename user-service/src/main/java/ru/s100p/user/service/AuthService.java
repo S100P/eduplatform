@@ -21,8 +21,6 @@ import ru.s100p.user.security.JwtService;
 import ru.s100p.user.security.TokenBlacklistService;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 @Slf4j

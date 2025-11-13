@@ -29,7 +29,8 @@ import java.util.List;
 
 import static ru.s100p.shared.constants.ApiConstants.API_V1_ADMIN;
 import static ru.s100p.shared.constants.ApiConstants.API_V1_INSTRUCTOR;
-import static ru.s100p.shared.constants.SecurityConstants.*;
+import static ru.s100p.shared.constants.SecurityConstants.ROLE_ADMIN;
+import static ru.s100p.shared.constants.SecurityConstants.ROLE_INSTRUCTOR;
 
 // Класс конфигурации безопасности Spring Security
 @Configuration
