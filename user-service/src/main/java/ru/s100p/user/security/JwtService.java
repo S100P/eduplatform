@@ -28,9 +28,6 @@ public class JwtService {
     @Value("${jwt.expiration}") // 1 час в миллисекундах
     private int jwtExpirationMs;
 
-    @Value("${jwt.refresh.expiration}") // 7 дней в миллисекундах
-    private int refreshExpirationMs;
-
     /**
      * Генерация access токена для аутентифицированного пользователя.
      *
@@ -70,35 +67,6 @@ public class JwtService {
 
         // Создание и подпись токена с коротким временем жизни
         return createToken(claims, userPrincipal.getUsername(), jwtExpirationMs);
-    }
-
-    /**
-     * Генерация refresh токена для обновления access токена.
-     *
-     * <p>Процесс генерации:</p>
-     * <ol>
-     *     <li>Создает минимальный набор claims, содержащий только тип токена ("refresh") для идентификации его назначения.</li>
-     *     <li>Вызывает {@code createToken} для создания подписанного JWT токена с длинным временем жизни ({@code refreshExpirationMs}).</li>
-     * </ol>
-     *
-     * <p>Назначение refresh токена:</p>
-     * <ul>
-     *     <li>Используется для получения нового access токена без повторной аутентификации пользователя (ввода логина и пароля).</li>
-     *     <li>Имеет длительный срок жизни (обычно 7 дней), что позволяет пользователю оставаться авторизованным длительное время.</li>
-     *     <li>Содержит минимальную информацию (только тип и username), так как не используется для авторизации запросов напрямую.</li>
-     *     <li>При компрометации refresh токена злоумышленник может получить новый access токен, поэтому важно хранить его безопасно.</li>
-     * </ul>
-     *
-     * @param username имя пользователя, для которого генерируется refresh токен.
-     * @return строковое представление JWT refresh токена.
-     */
-    public String generateRefreshToken(String username) {
-        // Формирование минимальной полезной нагрузки с указанием типа токена
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("type", "refresh");
-
-        // Создание и подпись токена с длинным временем жизни
-        return createToken(claims, username, refreshExpirationMs);
     }
 
     /**
