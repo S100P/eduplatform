@@ -5,4 +5,13 @@
     <option name="newEntityIdStrategy" />
     <option name="renamerInitialized" value="true" />
   </component>
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit moduleName="user-service" name="Default">
+        <packages>
+          <package value="ru.s100p.user" />
+        </packages>
+      </persistence-unit>
+    </persistence-units>
+  </component>
 </project>

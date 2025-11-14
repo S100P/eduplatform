@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Интерактивные сценарии: API Gateway и микросервисы (Zoomable, Fit-to-Modal, Fixed)</title>
+  <title>Интерактивные сценарии: API Gateway и микросервисы</title>
   <style>
     :root {
       --bg: #0b1020;
@@ -12,7 +12,6 @@
       --muted: #a7b0d6;
       --accent: #7aa2ff;
       --border: #223059;
-      --backdrop: rgba(0,0,0,.65);
     }
     .light {
       --bg: #f7f8ff;
@@ -21,7 +20,6 @@
       --muted: #516089;
       --accent: #3857ff;
       --border: #e7ebff;
-      --backdrop: rgba(0,0,0,.35);
     }
     html, body { height: 100%; }
     body {
@@ -83,104 +81,159 @@
       margin: 8px 0 16px;
       background: color-mix(in oklab, var(--card) 90%, #000);
     }
-    details[open] { background: color-mix(in oklab, var(--card) 80%, #000); }
-    summary { cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; }
+    details[open] {
+      background: color-mix(in oklab, var(--card) 80%, #000);
+    }
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent);
+      list-style: none;
+    }
     summary::-webkit-details-marker { display: none; }
-    .mermaid-wrapper {
+    
+    /* Контейнер диаграммы с кнопкой открытия */
+    .diagram-container {
+      position: relative;
       border: 1px solid var(--border);
       border-radius: 12px;
+      padding: 8px;
       background: #fff;
       color: #000;
-      overflow: auto;
-      position: relative;
-      padding: 8px;
-      margin-top: 8px;
+      overflow: hidden;
+      max-height: 400px;
+      cursor: pointer;
     }
-    .mermaid-toolbar {
+    .diagram-container:hover {
+      border-color: var(--accent);
+    }
+    .diagram-expand-hint {
       position: absolute;
       top: 8px;
       right: 8px;
-      display: flex;
-      gap: 6px;
-      z-index: 2;
-    }
-    .mermaid-toolbar button {
-      cursor: pointer;
-      border: 1px solid #e5e7eb;
-      background: #ffffff;
-      color: #111827;
-      border-radius: 8px;
-      padding: 4px 8px;
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: 600;
-      box-shadow: 0 1px 2px rgba(0,0,0,.08);
+      pointer-events: none;
+      opacity: 0.8;
+      z-index: 5;
     }
-    .mermaid-toolbar button:hover { border-color: #c7cbd5; }
-    .mermaid { min-height: 80px; }
-
-    /* Modal zoom */
+    .mermaid {
+      pointer-events: none;
+    }
+    
+    /* Модальное окно */
     .modal {
-      position: fixed;
-      inset: 0;
       display: none;
-      place-items: center;
-      background: var(--backdrop);
-      z-index: 50;
-      padding: 24px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      overflow: auto;
     }
-    .modal.open { display: grid; }
-    .modal-card {
-      width: min(1600px, 96vw);
-      height: min(92vh, 1000px);
-      background: #fff;
-      color: #000;
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
       border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.35);
-      display: grid;
-      grid-template-rows: auto 1fr;
-      overflow: hidden;
+      padding: 20px;
+      max-width: 95vw;
+      max-height: 95vh;
+      overflow: auto;
+      position: relative;
     }
     .modal-header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      padding: 10px;
-      border-bottom: 1px solid #e5e7eb;
-      background: #f8fafc;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #eee;
     }
-    .modal-title { font-weight: 700; }
-    .modal-tools { margin-left: auto; display: flex; gap: 6px; }
-    .modal-tools button {
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    .modal-close {
       cursor: pointer;
-      border: 1px solid #e5e7eb;
-      background: #ffffff;
-      color: #111827;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
       border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    .modal-close:hover {
+      background: #e0e0e0;
+    }
+    
+    /* Зум-контролы для модального окна */
+    .modal-zoom-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .modal-zoom-controls button {
+      padding: 8px 16px;
+      font-size: 16px;
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .modal-zoom-controls button:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .modal-diagram-wrapper {
+      overflow: auto;
+      max-height: calc(95vh - 150px);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: white;
+    }
+    .modal-diagram {
+      transform-origin: top left;
+      transition: transform 0.2s ease;
+    }
+    
+    .toolbar {
+      display: flex; gap: 8px; margin-left: auto;
+    }
+    button, .btn {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 10px;
       padding: 6px 10px;
       font-weight: 600;
-      box-shadow: 0 1px 2px rgba(0,0,0,.08);
     }
-    .modal-canvas {
-      position: relative;
-      background: #fff;
-      overflow: hidden;
-      cursor: grab;
-    }
-    .modal-canvas:active { cursor: grabbing; }
-    .zoom-surface {
-      transform-origin: 0 0;
-      width: max-content;
-      height: max-content;
-      will-change: transform;
-    }
-    .zoom-surface svg { width: auto; height: auto; max-width: none; max-height: none; display: block; }
+    button:hover { border-color: var(--accent); }
+    code.inline { background: #0008; padding: 2px 6px; border-radius: 6px; }
     footer { opacity: .7; text-align: center; padding: 24px; }
     .hint { color: var(--muted); font-size: 0.95em; }
   </style>
 </head>
 <body class="">
   <header>
-    <h1>Интерактивные сценарии работы: API Gateway и микросервисы</h1>
-    <div class="toolbar" style="display:flex;gap:8px;margin-left:auto;">
+    <h1>🚀 Интерактивные сценарии работы: API Gateway и микросервисы</h1>
+    <div class="toolbar">
       <button id="themeToggle" title="Переключить тему">🌗 Тема</button>
       <button id="rerender" title="Перерисовать диаграммы">🔄 Обновить диаграммы</button>
     </div>
@@ -192,43 +245,41 @@
       <a href="#classes">Структура классов (User Service)</a>
       <a href="#signup">Сценарий 1: Регистрация</a>
       <a href="#login">Сценарий 2: Логин</a>
-      <a href="#protected">Сценарий 3: Доступ к данным</a>
-      <a href="#payment">Сценарий 4: Оплата</a>
-      <a href="#gateway">API Gateway</a>
+      <a href="#protected">Сценарий 3: Доступ к защищённым данным</a>
+      <a href="#payment">Сценарий 4: Запись на курс + оплата</a>
+      <a href="#gateway">Как работает API Gateway</a>
       <a href="#checklist">Чеклист</a>
     </nav>
     <div>
       <section id="overview">
         <h2>Общий обзор</h2>
         <p>Все внешние запросы проходят через <strong>API Gateway</strong>, который проверяет JWT, применяет базовые правила доступа и маршрутизирует запросы к нужным микросервисам. Ниже — общая архитектурная схема.</p>
-        <div class="mermaid-wrapper" data-title="Общая архитектура">
-          <div class="mermaid-toolbar">
-            <button class="zoom-open">🔍 Увеличить</button>
-          </div>
+        <div class="diagram-container" data-diagram-id="overview-diagram">
+          <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
           <div class="mermaid">
 graph TD
   subgraph CLIENT
-    A[Frontend (React / Vue / Angular)]
+    A[Frontend React / Vue / Angular]
   end
   subgraph GATEWAY
     B[API Gateway<br/>Spring Cloud Gateway<br/>:8080]
   end
   subgraph SERVICES
-    U[User Service<br/>:8081<br/>PostgreSQL (users_db)]
-    C[Course Service<br/>:8082<br/>PostgreSQL (courses_db)]
-    E[Enrollment Service<br/>:8083<br/>PostgreSQL (enrollments_db)]
-    P[Payment Service<br/>:8084<br/>PostgreSQL (payments_db)]
-    N[Notification Service<br/>:8085<br/>PostgreSQL (notifications_db)]
-    A2[Analytics Service<br/>:8086<br/>PostgreSQL (analytics_db)]
+    U[User Service<br/>:8081<br/>PostgreSQL users_db]
+    C[Course Service<br/>:8082<br/>PostgreSQL courses_db]
+    E[Enrollment Service<br/>:8083<br/>PostgreSQL enrollments_db]
+    P[Payment Service<br/>:8084<br/>PostgreSQL payments_db]
+    N[Notification Service<br/>:8085<br/>PostgreSQL notifications_db]
+    A2[Analytics Service<br/>:8086<br/>PostgreSQL analytics_db]
   end
-  A -->|"HTTP + JWT Token"| B
-  B -->|"Маршрутизация + валидация токена"| U
+  A -->|HTTP + JWT Token| B
+  B -->|Маршрутизация + валидация токена| U
   B --> C
   B --> E
   B --> P
   B --> N
   B --> A2
-  U -->|"Регистрация / Логин / JWT выдача"| B
+  U -->|Регистрация / Логин / JWT выдача| B
           </div>
         </div>
       </section>
@@ -236,10 +287,8 @@ graph TD
       <section id="classes">
         <h2>Структура классов: пример User Service</h2>
         <p class="hint">Контроллеры принимают HTTP-запросы, сервисы содержат логику, репозитории работают с БД, утилиты помогают с безопасностью (JWT, пароли).</p>
-        <div class="mermaid-wrapper" data-title="Классы User Service">
-          <div class="mermaid-toolbar">
-            <button class="zoom-open">🔍 Увеличить</button>
-          </div>
+        <div class="diagram-container" data-diagram-id="classes-diagram">
+          <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
           <div class="mermaid">
 classDiagram
   class UserController {
@@ -297,10 +346,8 @@ classDiagram
         <h2>Сценарий 1: Регистрация пользователя</h2>
         <details open>
           <summary>Диаграмма последовательности</summary>
-          <div class="mermaid-wrapper" data-title="Регистрация пользователя">
-            <div class="mermaid-toolbar">
-              <button class="zoom-open">🔍 Увеличить</button>
-            </div>
+          <div class="diagram-container" data-diagram-id="signup-diagram">
+            <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
             <div class="mermaid">
 sequenceDiagram
   autonumber
@@ -312,7 +359,7 @@ sequenceDiagram
   participant Ur as UserRepository
   participant As as AuthService
   participant J as JwtProvider
-  participant N as Notification Service (опц)
+  participant N as Notification Service опц
 
   F->>G: POST /api/users/register (email, password, name)
   G->>Uc: маршрутизация в user-service
@@ -338,16 +385,23 @@ sequenceDiagram
             </div>
           </div>
         </details>
+        <details>
+          <summary>Пояснение по шагам и классам</summary>
+          <ol>
+            <li><code class="inline">UserController.register</code> валидирует входные данные и вызывает <code class="inline">UserService.createUser</code>.</li>
+            <li><code class="inline">UserService</code> хеширует пароль через <code class="inline">PasswordHasher</code> и сохраняет пользователя через <code class="inline">UserRepository</code> (роль по умолчанию <em>student</em>).</li>
+            <li>Если включён «автовход», <code class="inline">AuthService.issueTokens</code> создаёт <em>access</em>/<em>refresh</em> через <code class="inline">JwtProvider</code>.</li>
+            <li>Опционально отправляется welcome-письмо через Notification Service.</li>
+          </ol>
+        </details>
       </section>
 
       <section id="login">
         <h2>Сценарий 2: Логин (аутентификация)</h2>
         <details open>
           <summary>Диаграмма последовательности</summary>
-          <div class="mermaid-wrapper" data-title="Логин и выдача токенов">
-            <div class="mermaid-toolbar">
-              <button class="zoom-open">🔍 Увеличить</button>
-            </div>
+          <div class="diagram-container" data-diagram-id="login-diagram">
+            <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
             <div class="mermaid">
 sequenceDiagram
   autonumber
@@ -374,16 +428,18 @@ sequenceDiagram
             </div>
           </div>
         </details>
+        <details>
+          <summary>Пояснение по шагам и классам</summary>
+          <p><code class="inline">AuthService.authenticate</code> находит пользователя, сверяет пароль и при успехе выдаёт токены через <code class="inline">JwtProvider</code>. Gateway здесь ничего не подписывает — он лишь проксирует запрос и потом проверяет токены на последующих запросах.</p>
+        </details>
       </section>
 
       <section id="protected">
         <h2>Сценарий 3: Доступ к защищённым данным (пример: свои зачисления)</h2>
         <details open>
           <summary>Диаграмма последовательности</summary>
-          <div class="mermaid-wrapper" data-title="Доступ к зачислениям">
-            <div class="mermaid-toolbar">
-              <button class="zoom-open">🔍 Увеличить</button>
-            </div>
+          <div class="diagram-container" data-diagram-id="protected-diagram">
+            <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
             <div class="mermaid">
 sequenceDiagram
   autonumber
@@ -411,16 +467,21 @@ sequenceDiagram
             </div>
           </div>
         </details>
+        <details>
+          <summary>Пояснение по шагам и классам</summary>
+          <ul>
+            <li>Gateway проверяет JWT и базовые права на маршрут (coarse-grained).</li>
+            <li>В сервисе идёт «тонкая» проверка: <code class="inline">claims.sub == {userId}</code> или роль <em>admin</em>; затем выборка из БД.</li>
+          </ul>
+        </details>
       </section>
 
       <section id="payment">
         <h2>Сценарий 4: Запись на курс + оплата + уведомление</h2>
         <details open>
           <summary>Диаграмма последовательности</summary>
-          <div class="mermaid-wrapper" data-title="Оплата и зачисление">
-            <div class="mermaid-toolbar">
-              <button class="zoom-open">🔍 Увеличить</button>
-            </div>
+          <div class="diagram-container" data-diagram-id="payment-diagram">
+            <div class="diagram-expand-hint">🔍 Нажмите для увеличения</div>
             <div class="mermaid">
 sequenceDiagram
   autonumber
@@ -450,47 +511,50 @@ sequenceDiagram
             </div>
           </div>
         </details>
+        <details>
+          <summary>Пояснение по шагам и классам</summary>
+          <p>Payment Service инициирует платёж у провайдера (PSP). После успешного webhook-а проверяет подпись, создаёт зачисление в Enrollment, отправляет уведомление и метрику в Analytics.</p>
+        </details>
       </section>
 
       <section id="gateway">
         <h2>Как работает API Gateway (технически)</h2>
         <ul>
           <li><strong>JwtAuthFilter</strong>: валидация подписи и полей токена (<code class="inline">exp</code>, <code class="inline">iss</code>, <code class="inline">aud</code>), загрузка JWK из <code class="inline">/.well-known/jwks.json</code> user-service.</li>
-          <li><strong>Coarse‑grained авторизация</strong>: простые правила «какая роль может на какой маршрут/метод».</li>
+          <li><strong>Coarse-grained авторизация</strong>: простые правила «какая роль может на какой маршрут/метод».</li>
           <li><strong>Проксирование</strong>: либо прокидываем исходный <code class="inline">Authorization: Bearer</code>, либо заменяем на подписанные внутренние заголовки <code class="inline">X-Auth-*</code> с TTL.</li>
           <li><strong>Техническая защита</strong>: Rate limiting для чувствительных эндпоинтов, CORS, логирование/трейсинг, удаление пользовательских <code class="inline">X-User-*</code>.</li>
         </ul>
       </section>
 
       <section id="checklist">
-        <h2>Мини‑чеклист</h2>
+        <h2>Мини-чеклист</h2>
         <ul>
           <li>Gateway проверяет JWT и отсекает доступ по маршрутам.</li>
           <li>Сервис делает тонкую проверку доступа к конкретным данным.</li>
           <li>Внешний мир не видит внутренние сервисы (только через Gateway); mTLS внутри.</li>
-          <li>Токены живут 5–15 минут; refresh — через user‑service.</li>
+          <li>Токены живут 5—15 минут; refresh — через user-service.</li>
           <li>Логи и трассировка по <code class="inline">X-Request-Id</code>.</li>
         </ul>
       </section>
-      <footer class="hint">Клик по «Увеличить» открывает модал. Диаграмма рендерится заново как SVG, получает viewBox и <strong>автоматически масштабируется под окно</strong>. Дальше можно зумить без потери качества.</footer>
+      <footer class="hint">Mermaid-диаграммы можно увеличить нажатием на них. Тема переключается в шапке.</footer>
     </div>
   </main>
 
-  <!-- Modal Zoom -->
-  <div class="modal" id="zoomModal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Увеличенная диаграмма">
+  <!-- Модальное окно для диаграмм -->
+  <div class="modal" id="diagramModal">
+    <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title" id="zoomTitle">Диаграмма</div>
-        <div class="modal-tools">
-          <button id="fitBtn" title="Подогнать к окну">⤢ Fit</button>
-          <button id="zoomOutBtn">🔎 −</button>
-          <button id="zoomInBtn">🔍 +</button>
-          <button id="zoomResetBtn">⤢ Сброс</button>
-          <button id="zoomCloseBtn">✕ Закрыть</button>
-        </div>
+        <div class="modal-title" id="modalTitle">Диаграмма</div>
+        <button class="modal-close" id="modalClose">✕ Закрыть</button>
       </div>
-      <div class="modal-canvas" id="zoomCanvas">
-        <div class="zoom-surface" id="zoomSurface"></div>
+      <div class="modal-zoom-controls">
+        <button data-zoom="out">➖ Уменьшить</button>
+        <button data-zoom="reset">⚫ Сбросить</button>
+        <button data-zoom="in">➕ Увеличить</button>
+      </div>
+      <div class="modal-diagram-wrapper">
+        <div class="modal-diagram" id="modalDiagram"></div>
       </div>
     </div>
   </div>
@@ -498,18 +562,11 @@ sequenceDiagram
   <!-- Mermaid -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
+    // Тема
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const root = document.body;
     let theme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
-
-    function captureGraphDefs() {
-      document.querySelectorAll('.mermaid-wrapper .mermaid').forEach((el) => {
-        if (!el.dataset.graph) {
-          el.dataset.graph = el.textContent.trim();
-        }
-      });
-    }
-
+    
     function applyTheme(t) {
       if (t === 'light') root.classList.add('light');
       else root.classList.remove('light');
@@ -519,160 +576,90 @@ sequenceDiagram
       }
       localStorage.setItem('theme', t);
     }
-
-    captureGraphDefs();
     applyTheme(theme);
+
     document.getElementById('themeToggle').addEventListener('click', () => {
       theme = (theme === 'light') ? 'dark' : 'light';
       applyTheme(theme);
     });
+    
     document.getElementById('rerender').addEventListener('click', () => {
       if (window.mermaid) window.mermaid.run({});
     });
+
     if (window.mermaid) {
       window.mermaid.initialize({ startOnLoad: true, theme: theme === 'light' ? 'default' : 'dark' });
     }
 
-    // ===== Modal zoom logic (vector, fit to modal) =====
-    const modal = document.getElementById('zoomModal');
-    const zoomSurface = document.getElementById('zoomSurface');
-    const zoomCanvas = document.getElementById('zoomCanvas');
-    const zoomTitle = document.getElementById('zoomTitle');
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    const zoomResetBtn = document.getElementById('zoomResetBtn');
-    const zoomCloseBtn = document.getElementById('zoomCloseBtn');
-    const fitBtn = document.getElementById('fitBtn');
+    // Модальное окно для диаграмм
+    const modal = document.getElementById('diagramModal');
+    const modalDiagram = document.getElementById('modalDiagram');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalClose = document.getElementById('modalClose');
+    let currentScale = 1;
 
-    let scale = 1;
-    let offsetX = 0;
-    let offsetY = 0;
-    let isPanning = false;
-    let startX = 0;
-    let startY = 0;
-    let currentSVG = null;
-    let currentGraph = '';
-    let currentId = 0;
-
-    function applyTransform() {
-      zoomSurface.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-    }
-
-    function fitToCanvas(pad = 0.92) {
-      if (!currentSVG) return;
-      const viewBox = currentSVG.getAttribute('viewBox');
-      let w, h;
-      if (viewBox) {
-        const parts = viewBox.split(' ').map(Number);
-        w = parts[2]; h = parts[3];
-      } else {
-        const bb = currentSVG.getBBox();
-        w = bb.width; h = bb.height;
-        currentSVG.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    // Открытие модального окна
+    document.addEventListener('click', (e) => {
+      const container = e.target.closest('.diagram-container');
+      if (!container) return;
+      
+      const diagramId = container.dataset.diagramId;
+      const mermaidContent = container.querySelector('.mermaid');
+      if (!mermaidContent) return;
+      
+      // Копируем содержимое диаграммы
+      modalDiagram.innerHTML = mermaidContent.innerHTML;
+      modalDiagram.className = 'modal-diagram mermaid';
+      
+      // Устанавливаем заголовок
+      const section = container.closest('section');
+      const sectionTitle = section ? section.querySelector('h2')?.textContent : 'Диаграмма';
+      modalTitle.textContent = sectionTitle;
+      
+      // Сбрасываем масштаб
+      currentScale = 1;
+      modalDiagram.style.transform = 'scale(1)';
+      
+      // Показываем модальное окно
+      modal.classList.add('active');
+      
+      // Рендерим диаграмму в модальном окне
+      if (window.mermaid) {
+        window.mermaid.run({ nodes: [modalDiagram] });
       }
-      const cw = zoomCanvas.clientWidth;
-      const ch = zoomCanvas.clientHeight;
-      scale = Math.max(0.1, Math.min(cw / w, ch / h) * pad);
-      offsetX = (cw - w * scale) / 2;
-      offsetY = (ch - h * scale) / 2;
-      applyTransform();
-    }
+    });
 
-    async function renderSVG(graphText) {
-      currentId += 1;
-      const id = 'zoom_' + currentId;
-      const { svg } = await window.mermaid.render(id, graphText);
-      const container = document.createElement('div');
-      container.innerHTML = svg;
-      const svgEl = container.querySelector('svg');
-      svgEl.removeAttribute('width');
-      svgEl.removeAttribute('height');
-      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      return svgEl;
-    }
+    // Закрытие модального окна
+    modalClose.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
 
-    async function openZoom(wrapper) {
-      zoomSurface.innerHTML = '';
-      const source = wrapper.querySelector('.mermaid');
-      const raw = source?.dataset.graph ?? source?.textContent ?? '';
-      currentGraph = String(raw).trim();
-      zoomTitle.textContent = wrapper.getAttribute('data-title') || 'Диаграмма';
-
-      currentSVG = await renderSVG(currentGraph);
-      zoomSurface.appendChild(currentSVG);
-
-      if (!currentSVG.getAttribute('viewBox')) {
-        const bb = currentSVG.getBBox();
-        currentSVG.setAttribute('viewBox', `0 0 ${bb.width} ${bb.height}`);
+    // Закрытие по клику вне контента
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
       }
-
-      scale = 1; offsetX = 0; offsetY = 0;
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-
-      requestAnimationFrame(() => fitToCanvas(0.95));
-    }
-
-    function closeZoom() {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-      currentSVG = null;
-    }
-
-    document.querySelectorAll('.zoom-open').forEach(btn => {
-      btn.addEventListener('click', () => openZoom(btn.closest('.mermaid-wrapper')));
     });
 
-    zoomInBtn.addEventListener('click', () => { scale = Math.min(scale * 1.2, 12); applyTransform(); });
-    zoomOutBtn.addEventListener('click', () => { scale = Math.max(scale / 1.2, 0.1); applyTransform(); });
-    zoomResetBtn.addEventListener('click', () => { scale = 1; offsetX = 0; offsetY = 0; applyTransform(); });
-    fitBtn.addEventListener('click', () => fitToCanvas(0.96));
-
-    zoomCloseBtn.addEventListener('click', closeZoom);
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeZoom(); });
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeZoom();
-      if (!modal.classList.contains('open')) return;
-      if (e.key === '+' || e.key === '=') { scale = Math.min(scale * 1.2, 12); applyTransform(); }
-      if (e.key === '-' || e.key === '_') { scale = Math.max(scale / 1.2, 0.1); applyTransform(); }
-      if (e.key.toLowerCase() === 'r') { scale = 1; offsetX = 0; offsetY = 0; applyTransform(); }
-      if (e.key.toLowerCase() === 'f') { fitToCanvas(0.96); }
+    // Закрытие по Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        modal.classList.remove('active');
+      }
     });
 
-    // Panning
-    zoomCanvas.addEventListener('mousedown', (e) => {
-      if (!modal.classList.contains('open')) return;
-      isPanning = true;
-      startX = e.clientX - offsetX;
-      startY = e.clientY - offsetY;
+    // Зум-контролы в модальном окне
+    document.querySelector('.modal-zoom-controls').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-zoom]');
+      if (!btn) return;
+      
+      const action = btn.dataset.zoom;
+      if (action === 'in') currentScale = Math.min(currentScale + 0.25, 3);
+      if (action === 'out') currentScale = Math.max(currentScale - 0.25, 0.5);
+      if (action === 'reset') currentScale = 1;
+      
+      modalDiagram.style.transform = `scale(${currentScale})`;
     });
-    window.addEventListener('mousemove', (e) => {
-      if (!isPanning) return;
-      offsetX = e.clientX - startX;
-      offsetY = e.clientY - startY;
-      applyTransform();
-    });
-    window.addEventListener('mouseup', () => { isPanning = false; });
-
-    // Wheel zoom with cursor focus point
-    zoomCanvas.addEventListener('wheel', (e) => {
-      if (!modal.classList.contains('open')) return;
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 1.1 : 0.9;
-      const prevScale = scale;
-      scale = Math.min(Math.max(scale * delta, 0.1), 12);
-
-      const rect = zoomCanvas.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      offsetX = cx - (cx - offsetX) * (scale / prevScale);
-      offsetY = cy - (cy - offsetY) * (scale / prevScale);
-      applyTransform();
-    }, { passive: false });
-
-    // Re-fit on modal resize
-    const ro = new ResizeObserver(() => { if (modal.classList.contains('open')) fitToCanvas(0.95); });
-    ro.observe(zoomCanvas);
   </script>
 </body>
 </html>
