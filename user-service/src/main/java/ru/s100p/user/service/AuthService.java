@@ -93,49 +93,48 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * Генерация AuthResponse для нового пользователя
+     */
+    @Transactional
+    public AuthResponse generateAuthResponse(UserDto userDto) {
+        User user = userRepository.findById(userDto.id())
+                .orElseThrow(() -> new BusinessException("Пользователь не найден",
+                        ErrorCodes.USER_NOT_FOUND));
 
-        /**
-         * Генерация AuthResponse для нового пользователя
+        /*
+         * Создание UserDetails. UserDetails – это описание (контракт) сущности, которая
+         * пытается получить доступ к приложению. Источник данных: Он содержит все данные,
+         * необходимые для принятия решений об авторизации и для сравнения учетных данных.
+         * UserDetails отвечает на вопрос, кто этот пользователь.
          */
-        @Transactional
-        public AuthResponse generateAuthResponse(UserDto userDto) {
-                User user = userRepository.findById(userDto.id())
-                                .orElseThrow(() -> new BusinessException("Пользователь не найден",
-                                                ErrorCodes.USER_NOT_FOUND));
+        UserDetails userDetails = createUserDetails(user);
+        /*
+         * Создание Authentication объекта. Объект Authentication в Spring Security служит
+         * центральным контейнером для всей информации, связанной с аутентификацией
+         * пользователя. Объект Authentication – это доказательство того, что процесс
+         * аутентификации был успешно завершен. Он отвечает на вопрос, был ли пользователь
+         * успешно аутентифицирован. Это как штамп о въезде 🔖 в вашем паспорте — само по
+         * себе наличие паспорта не означает, что вы внутри страны, но штамп доказывает
+         * успешное прохождение контроля.
+         *
+         * Principal: Как правило, это объект UserDetails. Credentials: Пароль (до
+         * аутентификации) или null (после аутентификации). [В вашем случае передается null,
+         * так как аутентификация уже прошла (пользователь найден), и пароль не нужен для
+         * создания токена.] isAuthenticated(): Самый важный флаг, который устанавливается в
+         * true после успешной проверки.
+         */
+        /*
+         * В методе UsernamePasswordAuthenticationToken флаг isAuthenticated() всегда
+         * устанавливает true, т.к. вызывается после успешной регистрации и проверки в
+         * (userService.registerUser).
+         * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security, а информируете его о том, что аутентификация уже состоялась."
+         */
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails,
+                null, userDetails.getAuthorities());
 
-                /*
-                 * Создание UserDetails. UserDetails – это описание (контракт) сущности, которая
-                 * пытается получить доступ к приложению. Источник данных: Он содержит все данные,
-                 * необходимые для принятия решений об авторизации и для сравнения учетных данных.
-                 * UserDetails отвечает на вопрос, кто этот пользователь.
-                 */
-                UserDetails userDetails = createUserDetails(user);
-                /*
-                 * Создание Authentication объекта. Объект Authentication в Spring Security служит
-                 * центральным контейнером для всей информации, связанной с аутентификацией
-                 * пользователя. Объект Authentication – это доказательство того, что процесс
-                 * аутентификации был успешно завершен. Он отвечает на вопрос, был ли пользователь
-                 * успешно аутентифицирован. Это как штамп о въезде 🔖 в вашем паспорте — само по
-                 * себе наличие паспорта не означает, что вы внутри страны, но штамп доказывает
-                 * успешное прохождение контроля.
-                 *
-                 * Principal: Как правило, это объект UserDetails. Credentials: Пароль (до
-                 * аутентификации) или null (после аутентификации). [В вашем случае передается null,
-                 * так как аутентификация уже прошла (пользователь найден), и пароль не нужен для
-                 * создания токена.] isAuthenticated(): Самый важный флаг, который устанавливается в
-                 * true после успешной проверки.
-                 */
-                /*
-                 * В методе UsernamePasswordAuthenticationToken флаг isAuthenticated() всегда
-                 * устанавливает true, т.к. вызывается после успешной регистрации и проверки в
-                 * (userService.registerUser).
-                 * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security, а информируете его о том, что аутентификация уже состоялась."
-                 */
-                Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails,
-                                null, userDetails.getAuthorities());
-
-                // Генерация токенов
-                String accessToken = jwtService.generateAccessToken(authentication);
+        // Генерация токенов
+        String accessToken = jwtService.generateAccessToken(authentication);
         var refreshTokenDto = refreshTokenService.createToken(user.getId(), REFRESH_TOKEN_EXPIRY);
 
         return AuthResponse.builder()
@@ -149,34 +148,34 @@ public class AuthService {
                 .emailVerified(false)
                 .message("Регистрация прошла успешно")
                 .build();
-        }
+    }
 
-        /**
-         * Обновление access токена через refresh токен
-         */
-        @Transactional
-        public AuthResponse refreshToken(String refreshToken) {
-                log.info("Запрос на обновление токена");
+    /**
+     * Обновление access токена через refresh токен
+     */
+    @Transactional
+    public AuthResponse refreshToken(String refreshToken) {
+        log.info("Запрос на обновление токена");
 
-                // Валидация refresh токена
-                var refreshTokenEntity = refreshTokenService.validateAndGetToken(refreshToken);
+        // Валидация refresh токена
+        var refreshTokenEntity = refreshTokenService.validateAndGetToken(refreshToken);
 
-                User user = userRepository.findById(refreshTokenEntity.getUser().getId())
+        User user = userRepository.findById(refreshTokenEntity.getUser().getId())
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
 
-                // Создание нового access токена
-                UserDetails userDetails = createUserDetails(user);
+        // Создание нового access токена
+        UserDetails userDetails = createUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
         );
 
-                String newAccessToken = jwtService.generateAccessToken(authentication);
+        String newAccessToken = jwtService.generateAccessToken(authentication);
 
-                // Опционально: ротация refresh токена
-                refreshTokenService.revokeToken(refreshToken);
+        // Опционально: ротация refresh токена
+        refreshTokenService.revokeToken(refreshToken);
         var newRefreshToken = refreshTokenService.createToken(user.getId(), REFRESH_TOKEN_EXPIRY);
 
-                log.info("Токен успешно обновлен для пользователя: {}", user.getUsername());
+        log.info("Токен успешно обновлен для пользователя: {}", user.getUsername());
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
