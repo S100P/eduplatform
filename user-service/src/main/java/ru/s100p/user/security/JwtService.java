@@ -31,29 +31,73 @@ public class JwtService {
     @Value("${jwt.refresh.expiration}") // 7 дней в миллисекундах
     private int refreshExpirationMs;
 
-    //TODO дописать сюда док и комменты, что делает метод
     /**
-     * Генерация access токена
+     * Генерация access токена для аутентифицированного пользователя.
+     *
+     * <p>Процесс генерации:</p>
+     * <ol>
+     *     <li>Извлекает объект {@code UserDetails} из {@code Authentication}, который содержит информацию о пользователе.</li>
+     *     <li>Формирует claims (полезную нагрузку) токена:
+     *         <ul>
+     *             <li><b>username</b>: имя пользователя для идентификации владельца токена.</li>
+     *             <li><b>authorities</b>: список ролей и прав доступа пользователя, преобразованный из {@code GrantedAuthority} в строки.</li>
+     *         </ul>
+     *     </li>
+     *     <li>Вызывает {@code createToken} для создания подписанного JWT токена с коротким временем жизни ({@code jwtExpirationMs}).</li>
+     * </ol>
+     *
+     * <p>Назначение access токена:</p>
+     * <ul>
+     *     <li>Используется для аутентификации пользователя при каждом запросе к защищенным ресурсам.</li>
+     *     <li>Содержит информацию о правах доступа (authorities), что позволяет авторизовать действия без обращения к базе данных.</li>
+     *     <li>Имеет короткий срок жизни (обычно 1 час) для минимизации рисков при компрометации токена.</li>
+     * </ul>
+     *
+     * @param authentication объект аутентификации Spring Security, содержащий информацию о пользователе.
+     * @return строковое представление JWT access токена.
      */
     public String generateAccessToken(Authentication authentication) {
+        // Извлечение информации о пользователе из объекта аутентификации
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
 
+        // Формирование полезной нагрузки токена с данными пользователя
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", userPrincipal.getUsername());
+        // Преобразование списка прав доступа в список строк для включения в токен
         claims.put("authorities", userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
 
+        // Создание и подпись токена с коротким временем жизни
         return createToken(claims, userPrincipal.getUsername(), jwtExpirationMs);
     }
 
     /**
-     * Генерация refresh токена
+     * Генерация refresh токена для обновления access токена.
+     *
+     * <p>Процесс генерации:</p>
+     * <ol>
+     *     <li>Создает минимальный набор claims, содержащий только тип токена ("refresh") для идентификации его назначения.</li>
+     *     <li>Вызывает {@code createToken} для создания подписанного JWT токена с длинным временем жизни ({@code refreshExpirationMs}).</li>
+     * </ol>
+     *
+     * <p>Назначение refresh токена:</p>
+     * <ul>
+     *     <li>Используется для получения нового access токена без повторной аутентификации пользователя (ввода логина и пароля).</li>
+     *     <li>Имеет длительный срок жизни (обычно 7 дней), что позволяет пользователю оставаться авторизованным длительное время.</li>
+     *     <li>Содержит минимальную информацию (только тип и username), так как не используется для авторизации запросов напрямую.</li>
+     *     <li>При компрометации refresh токена злоумышленник может получить новый access токен, поэтому важно хранить его безопасно.</li>
+     * </ul>
+     *
+     * @param username имя пользователя, для которого генерируется refresh токен.
+     * @return строковое представление JWT refresh токена.
      */
     public String generateRefreshToken(String username) {
+        // Формирование минимальной полезной нагрузки с указанием типа токена
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "refresh");
 
+        // Создание и подпись токена с длинным временем жизни
         return createToken(claims, username, refreshExpirationMs);
     }
 
