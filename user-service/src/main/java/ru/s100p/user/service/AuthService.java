@@ -71,6 +71,7 @@ public class AuthService {
 
         // Генерация токенов
         String accessToken = jwtService.generateAccessToken(authentication);
+        // Если стоить галочка "запомнить", то устанавливается срок в 30 дней, если нет, в 7
         long refreshExpiry = request.isRememberMe() ? REMEMBER_ME_EXPIRY : REFRESH_TOKEN_EXPIRY;
         var refreshTokenDto = refreshTokenService.createToken(user.getId(), refreshExpiry);
 
@@ -128,7 +129,8 @@ public class AuthService {
          * В методе UsernamePasswordAuthenticationToken флаг isAuthenticated() всегда
          * устанавливает true, т.к. вызывается после успешной регистрации и проверки в
          * (userService.registerUser).
-         * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security, а информируете его о том, что аутентификация уже состоялась."
+         * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security,
+         * а информируете его о том, что аутентификация уже состоялась."
          */
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails,
                 null, userDetails.getAuthorities());
@@ -195,6 +197,12 @@ public class AuthService {
     @Transactional
     public void logout(String token) {
         log.info("Выход из системы");
+
+        // Проверка токена, чтобы отфильтровать в принципе "не наши" токены
+        if (!jwtService.validateToken(token)) {
+            log.warn("Попытка выхода с невалидным токеном.");
+            throw new BusinessException("Невалидный токен", ErrorCodes.INVALID_TOKEN);
+        }
 
         // Добавление токена в черный список
         tokenBlacklistService.blacklistToken(token);

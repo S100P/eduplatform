@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class TokenBlacklistService {
 
-    // Временное хранилище (в продакшене использовать Redis)
+    //TODO Временное хранилище (в продакшене использовать Redis)
     private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, Long> passwordResetTokens = new ConcurrentHashMap<>();
 

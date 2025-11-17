@@ -37,7 +37,6 @@ public class AuthController {
         UserDto user = userService.registerUser(request);
         AuthResponse authResponse = authService.generateAuthResponse(user);
 
-        //см файл шпаргалку в корень проекта
         ApiResponse<AuthResponse> response = ApiResponse.<AuthResponse>builder()
                 .success(true)
                 .message("Пользователь успешно зарегистрирован")
@@ -93,8 +92,10 @@ public class AuthController {
             @RequestHeader(ApiConstants.AUTHORIZATION_HEADER) String token,
             @RequestParam(required = false, defaultValue = "false") boolean allDevices) {
 
+        // Контроллер получает заголовок Authorization, очищает его от технического префикса "Bearer " и передает чистый токен в authService.
         String jwt = token.replace(ApiConstants.BEARER_PREFIX, "");
 
+        // Сервис получает уже готовый к работе токен и может (и должен) его провалидировать перед тем, как выполнять с ним какие-либо действия.
         if (allDevices) {
             authService.logoutFromAllDevices(jwt);
             log.info("Выход из всех устройств");
