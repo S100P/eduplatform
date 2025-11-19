@@ -32,22 +32,15 @@ import static ru.s100p.shared.constants.ApiConstants.API_V1_INSTRUCTOR;
 import static ru.s100p.shared.constants.SecurityConstants.ROLE_ADMIN;
 import static ru.s100p.shared.constants.SecurityConstants.ROLE_INSTRUCTOR;
 
-// Класс конфигурации безопасности Spring Security
 @Configuration
-// Включает поддержку веб-безопасности Spring
-@EnableWebSecurity
-// Включает поддержку безопасности на уровне методов (например, @PreAuthorize)
-@EnableMethodSecurity(prePostEnabled = true)
-// Генерирует конструктор с обязательными полями (final)
+@EnableWebSecurity // Включает поддержку веб-безопасности Spring
+@EnableMethodSecurity(prePostEnabled = true) // Включает поддержку безопасности на уровне методов (например, @PreAuthorize)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Точка входа для обработки ошибок аутентификации JWT
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    // Фильтр для аутентификации с использованием JWT
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    // Сервис для загрузки пользовательских данных
-    private final UserDetailsService userDetailsService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint; // Точка входа для обработки ошибок аутентификации JWT
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Фильтр для аутентификации с использованием JWT
+    private final UserDetailsService userDetailsService; // Сервис для загрузки пользовательских данных
     private final CustomAccessDeniedHandler accessDeniedHandler;
 
     // Массив публичных URL-адресов, доступных без аутентификации
@@ -92,9 +85,9 @@ public class SecurityConfig {
                 // Настройка управления сессиями
                 .sessionManagement(session -> session
                         // Устанавливает политику создания сессий на STATELESS (без сессий на сервере)
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) //TODO можно ли оставить стейтфул и использовать вместе с JWT?
                 )
-                // Устанавливает провайдер аутентификации
+                // Устанавливает провайдер аутентификации. В современных версиях эта строка уже не нужна в конфиге, так как это делается автоматически. Эту строку можно удалить.
                 .authenticationProvider(authenticationProvider())
                 // Добавляет JWT-фильтр перед стандартным фильтром аутентификации по имени пользователя и паролю
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -110,14 +103,22 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(12);
     }
 
-    /* Этот метод настраивает основной механизм для проверки подлинности (аутентификации) пользователей. Кратко: Этот бин связывает логику аутентификации Spring Security с вашими данными о пользователях и стратегией хеширования паролей.*/
+    /* Этот метод настраивает основной механизм для проверки подлинности (аутентификации) пользователей. Кратко: Этот бин связывает логику аутентификации Spring Security с вашими данными о пользователях и стратегией хеширования паролей.
+    *
+    * В современных версиях Spring Security вам больше не нужно вручную создавать DaoAuthenticationProvider и передавать его в HttpSecurity. Spring Boot сделает это за вас автоматически, если найдет в контексте приложения бины UserDetailsService и PasswordEncoder.
+    *
+    * Поэтому можно удалить метод authenticationProvider(). Он больше не нужен.
+    * Удалить строку .authenticationProvider(authenticationProvider()) из конфигурации securityFilterChain.
+    *
+    * Но если будет несколько реализаций UserDetailService, то нужно
+    * */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         /* Создает DAO (Data Access Object) провайдер аутентификации.  Это стандартная реализация AuthenticationProvider в Spring Security. Его задача — аутентифицировать пользователя на основе логина и пароля.*/
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        /* Устанавливает сервис для загрузки пользовательских данных. Это самая важная часть. Она "подключает" вашу кастомную логику для поиска пользователя. userDetailsService — это сервис (скорее всего, другой бин, определенный вами), который знает, как получить данные пользователя (логин, хеш пароля, роли/права) из базы данных или любого другого источника.*/
+        /* Устанавливает сервис для загрузки пользовательских данных. Это самая важная часть. Она "подключает" вашу кастомную логику для поиска пользователя. userDetailsService — это интерфейс, Spring автоматически находит его нашу реализацию CustomUserDeteilservice, который уже в свою очередь знает, как получить данные пользователя (логин, хеш пароля, роли/права) из базы данных или любого другого источника благодаря переопределенному методу loadUserByUsername.*/
         authProvider.setUserDetailsService(userDetailsService);
-        /* Устанавливает кодировщик паролей. authProvider.setPasswordEncoder(passwordEncoder()): Хранить пароли в открытом виде — плохая практика. Эта строка устанавливает алгоритм хеширования паролей (например, BCrypt). Когда пользователь пытается войти, этот провайдер берет введенный им пароль, хеширует его с помощью passwordEncoder и сравнивает результат с хешем, который userDetailsService получил из базы данных.*/
+        /* Устанавливает кодировщик паролей. authProvider.setPassordEncoder(passwordEncoder()): Хранить пароли в открытом виде — плохая практика. Эта строка устанавливает алгоритм хеширования паролей (например, BCrypt). Когда пользователь пытается войти, этот провайдер берет введенный им пароль, хеширует его с помощью passwordEncoder и сравнивает результат с хешем, который userDetailsService получил из базы данных.*/
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

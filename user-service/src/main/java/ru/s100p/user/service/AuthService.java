@@ -129,8 +129,7 @@ public class AuthService {
          * В методе UsernamePasswordAuthenticationToken флаг isAuthenticated() всегда
          * устанавливает true, т.к. вызывается после успешной регистрации и проверки в
          * (userService.registerUser).
-         * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security,
-         * а информируете его о том, что аутентификация уже состоялась."
+         * "В этом контексте, вы сами подтверждаете статус аутентификации, создавая токен. Вы не поручаете проверку Spring Security, а информируете его о том, что аутентификация уже состоялась."
          */
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails,
                 null, userDetails.getAuthorities());
@@ -207,7 +206,7 @@ public class AuthService {
         // Добавление токена в черный список
         tokenBlacklistService.blacklistToken(token);
 
-        // Отзыв refresh токена
+        // Отзыв refresh токена. В jwtService.getUsernameFromToken(token) тоже происходит скрытая валидация через  .parseClaimsJws(authToken) как и в jwtService.validateToken(String authToken) (который работает через секретный ключ, без UserDetails)
         String username = jwtService.getUsernameFromToken(token);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
@@ -228,6 +227,7 @@ public class AuthService {
     public void logoutFromAllDevices(String token) {
         log.info("Выход из всех устройств");
 
+        // В jwtService.getUsernameFromToken(token) тоже происходит скрытая валидация через  .parseClaimsJws(authToken) как и в jwtService.validateToken(String authToken) (который работает через секретный ключ, без UserDetails)
         String username = jwtService.getUsernameFromToken(token);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
