@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диаграмма Системы Безопасности</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            color: #0056b3;
+        }
+        .scenario {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .explanation {
+            margin-top: 20px;
+            background-color: #e9f7ff;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+        }
+        code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+        }
+        strong {
+            color: #0056b3;
+        }
+        .mermaid {
+            text-align: center;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Архитектура Безопасности Проекта</h1>
+        <p>
+            Эта диаграмма описывает реализованную архитектуру безопасности, основанную на <strong>API Gateway</strong> и принципе <strong>"Нулевого Доверия" (Zero Trust)</strong> между сервисами.
+            Шлюз выступает как единая точка входа и аутентификации, а внутренние сервисы, не доверяя слепо шлюзу, проверяют подписанные им данные.
+        </p>
+
+        <!-- Сценарий 1: Успешный вход пользователя -->
+        <div class="scenario">
+            <h2>Сценарий 1: Успешный вход пользователя (Получение JWT)</h2>
+            <p>Пользователь отправляет логин и пароль, чтобы получить токен доступа (JWT). Этот маршрут является публичным, и шлюз просто проксирует запрос.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Client as Клиент
+    participant Gateway as API Gateway
+    participant UserService as User-Service
+
+    Client->>Gateway: POST /api/v1/auth/login (логин, пароль)
+    note right of Client: Отправка учетных данных
+    Gateway->>UserService: POST /api/v1/auth/login (логин, пароль)
+    note over Gateway: Маршрут публичный, простое проксирование
+    
+    activate UserService
+    UserService->>UserService: <strong>AuthController:</strong> login()
+    UserService->>UserService: <strong>AuthService:</strong> authenticate()
+    note over UserService: Вызывает AuthenticationManager для проверки пароля
+    UserService->>UserService: <strong>JwtService:</strong> generateAccessToken()
+    note over UserService: Создает и подписывает JWT
+    UserService-->>Gateway: 200 OK (содержит JWT)
+    deactivate UserService
+    
+    Gateway-->>Client: 200 OK (содержит JWT)
+            </div>
+            <div class="explanation">
+                <h3>Пошаговое объяснение:</h3>
+                <ol>
+                    <li>Клиент отправляет запрос на <code>/api/v1/auth/login</code> с логином и паролем.</li>
+                    <li><strong>API Gateway</strong> определяет, что этот путь не требует аутентификации, и просто перенаправляет запрос в <strong>User-Service</strong>.</li>
+                    <li>В <strong>User-Service</strong>:
+                        <ul>
+                            <li><code>AuthController</code> принимает запрос.</li>
+                            <li><code>AuthService</code> использует <code>AuthenticationManager</code> для проверки корректности логина и пароля.</li>
+                            <li>После успешной проверки <code>JwtService</code> генерирует новый JWT (access token).</li>
+                        </ul>
+                    </li>
+                    <li><strong>User-Service</strong> возвращает ответ с JWT, который проходит через шлюз обратно клиенту.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Сценарий 2: Успешный доступ к защищенному ресурсу -->
+        <div class="scenario">
+            <h2>Сценарий 2: Успешный доступ к защищенному ресурсу</h2>
+            <p>Это основной сценарий, демонстрирующий всю цепочку проверки. Клиент использует полученный JWT для доступа к защищенному эндпоинту.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Client as Клиент
+    participant Gateway as API Gateway
+    participant UserService as User-Service
+
+    Client->>Gateway: GET /api/v1/users/me <br/>(Header: Bearer JWT)
+    
+    activate Gateway
+    Gateway->>Gateway: <strong>JwtAuthenticationFilter:</strong> filter()
+    note over Gateway: 1. Проверка JWT через <code>JwtUtil</code> (валиден).<br/>2. Удаление старых <code>X-Auth-*</code> заголовков.<br/>3. Создание HMAC-подписи через <code>createSignature()</code>.<br/>4. Добавление новых, подписанных <code>X-Auth-*</code> заголовков.
+    Gateway->>UserService: GET /... <br/>(Headers: X-Auth-User, X-Auth-Roles, X-Auth-Exp, X-Auth-Signature)
+    deactivate Gateway
+    
+    activate UserService
+    UserService->>UserService: <strong>HeaderAuthenticationFilter:</strong> doFilterInternal()
+    note over UserService: 1. Проверка срока действия (X-Auth-Exp).<br/>2. Проверка HMAC-подписи (X-Auth-Signature) -> УСПЕХ.<br/>3. Заполнение SecurityContext с ID и ролями пользователя.
+    UserService->>UserService: <strong>AuthController:</strong> getCurrentUser(Principal)
+    note over UserService: Spring внедряет Principal из SecurityContext
+    UserService-->>Gateway: 200 OK (Данные пользователя)
+    deactivate UserService
+    
+    Gateway-->>Client: 200 OK (Данные пользователя)
+            </div>
+            <div class="explanation">
+                <h3>Пошаговое объяснение:</h3>
+                <ol>
+                    <li>Клиент отправляет запрос к защищенному ресурсу, прикрепляя JWT в заголовке <code>Authorization</code>.</li>
+                    <li>В <strong>API Gateway</strong>:
+                        <ul>
+                            <li><code>JwtAuthenticationFilter</code> перехватывает запрос.</li>
+                            <li><code>JwtUtil</code> проверяет подпись и срок действия JWT. Проверка успешна.</li>
+                            <li>Фильтр "экранирует" заголовки: удаляет все входящие <code>X-Auth-*</code> и <code>X-User-*</code>.</li>
+                            <li>Фильтр извлекает из JWT <code>id</code>, <code>roles</code>, <code>expiration</code>, создает из них строку и генерирует HMAC-подпись с помощью <code>jwt.internal-secret</code>.</li>
+                            <li>В запрос к микросервису добавляются новые заголовки: <code>X-Auth-User</code>, <code>X-Auth-Roles</code>, <code>X-Auth-Exp</code> и <code>X-Auth-Signature</code>.</li>
+                        </ul>
+                    </li>
+                    <li>В <strong>User-Service</strong>:
+                        <ul>
+                            <li><code>HeaderAuthenticationFilter</code> перехватывает запрос.</li>
+                            <li>Он проверяет, что срок действия в <code>X-Auth-Exp</code> не истек.</li>
+                            <li>Он пересчитывает HMAC-подпись, используя те же данные и тот же <code>jwt.internal-secret</code>, и сравнивает ее с подписью в <code>X-Auth-Signature</code>. Проверка успешна.</li>
+                            <li>Фильтр создает объект <code>Authentication</code> и помещает его в <code>SecurityContextHolder</code>.</li>
+                            <li>Запрос доходит до <code>AuthController</code>. Spring видит, что метод требует <code>Principal</code>, и внедряет его из заполненного <code>SecurityContext</code>.</li>
+                        </ul>
+                    </li>
+                    <li>Сервис возвращает успешный ответ, который проходит через шлюз клиенту.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Сценарий 3: Неудачный доступ (невалидный JWT) -->
+        <div class="scenario">
+            <h2>Сценарий 3: Неудачный доступ (невалидный JWT)</h2>
+            <p>Клиент пытается использовать просроченный или поддельный JWT. Шлюз должен немедленно отклонить запрос.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Client as Клиент
+    participant Gateway as API Gateway
+    participant UserService as User-Service
+
+    Client->>Gateway: GET /api/v1/users/me <br/>(Header: Bearer BAD_JWT)
+    
+    activate Gateway
+    Gateway->>Gateway: <strong>JwtAuthenticationFilter:</strong> filter()
+    note over Gateway: Проверка JWT через <code>JwtUtil</code> -> НЕВАЛИДЕН!
+    Gateway-->>Client: 401 Unauthorized
+    deactivate Gateway
+    
+    note over UserService: Запрос никогда не доходит до сервиса
+            </div>
+            <div class="explanation">
+                <h3>Пошаговое объяснение:</h3>
+                <ol>
+                    <li>Клиент отправляет запрос с невалидным JWT.</li>
+                    <li><strong>API Gateway</strong> в <code>JwtAuthenticationFilter</code> вызывает <code>JwtUtil</code>, который определяет, что токен просрочен или имеет неверную подпись.</li>
+                    <li>Шлюз немедленно прерывает цепочку и возвращает клиенту ответ <strong>401 Unauthorized</strong>.</li>
+                    <li>Запрос никогда не достигает <strong>User-Service</strong>, что экономит ресурсы внутренних сервисов.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Сценарий 4: Попытка обхода шлюза -->
+        <div class="scenario">
+            <h2>Сценарий 4: Попытка обхода шлюза (Zero Trust в действии)</h2>
+            <p>Злоумышленник узнал прямой адрес User-Service и пытается отправить запрос напрямую, подделав заголовки, но не имея секрета для подписи.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Attacker as Злоумышленник
+    participant UserService as User-Service
+
+    Attacker->>UserService: GET /... <br/>(Headers: X-Auth-User="fake", X-Auth-Roles="ROLE_ADMIN", X-Auth-Signature="bad_signature")
+    
+    activate UserService
+    UserService->>UserService: <strong>HeaderAuthenticationFilter:</strong> doFilterInternal()
+    note over UserService: 1. Проверка срока действия (допустим, ОК).<br/>2. Проверка HMAC-подписи -> ПРОВАЛ!<br/>(Вычисленная подпись не совпадает с `bad_signature`)
+    UserService-->>Attacker: 401 Unauthorized
+    deactivate UserService
+            </div>
+            <div class="explanation">
+                <h3>Пошаговое объяснение:</h3>
+                <ol>
+                    <li>Злоумышленник отправляет запрос напрямую в <strong>User-Service</strong>, в обход шлюза. Он пытается выдать себя за администратора, подделав заголовки <code>X-Auth-User</code> и <code>X-Auth-Roles</code>.</li>
+                    <li>Так как злоумышленник не знает <code>jwt.internal-secret</code>, он либо не присылает <code>X-Auth-Signature</code>, либо присылает некорректную подпись.</li>
+                    <li>В <strong>User-Service</strong>:
+                        <ul>
+                            <li><code>HeaderAuthenticationFilter</code> перехватывает запрос.</li>
+                            <li>Он видит все необходимые заголовки, но когда пытается проверить подпись, вычисленное им значение не совпадает со значением в заголовке <code>X-Auth-Signature</code>.</li>
+                            <li>Фильтр немедленно прерывает обработку и возвращает ответ <strong>401 Unauthorized</strong>.</li>
+                        </ul>
+                    </li>
+                    <li>Запрос не доходит до контроллера. Система защищена, даже если сетевая изоляция была нарушена.</li>
+                </ol>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

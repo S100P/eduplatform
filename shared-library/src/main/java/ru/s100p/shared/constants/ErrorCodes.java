@@ -5,6 +5,7 @@ public final class ErrorCodes {
 
     // Security related errors
     public static final String INVALID_TOKEN = "INVALID_TOKEN";
+    public static final String UNAUTHORIZED = "UNAUTHORIZED";
 
     private ErrorCodes() {}
 

@@ -99,6 +99,7 @@ jwt:
   expiration: 3600000 # 1 час
   refresh:
     expiration: 604800000 # 7 дней
+  internal-secret: ${INTERNAL_SECRET:anotherStrongSecretKeyForInternalCommunication0987654321}
 
 # Настройки безопасности
 security:
