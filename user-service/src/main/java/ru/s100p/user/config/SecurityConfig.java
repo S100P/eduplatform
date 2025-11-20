@@ -54,7 +54,9 @@ public class SecurityConfig {
             "/actuator/health",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            "/error",
+            "/favicon.ico"
     };
 
     // Определяет цепочку фильтров безопасности
@@ -88,7 +90,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) //TODO можно ли оставить стейтфул и использовать вместе с JWT?
                 )
                 // Устанавливает провайдер аутентификации. В современных версиях эта строка уже не нужна в конфиге, так как это делается автоматически. Эту строку можно удалить.
-                .authenticationProvider(authenticationProvider())
+                //.authenticationProvider(authenticationProvider())
                 // Добавляет JWT-фильтр перед стандартным фильтром аутентификации по имени пользователя и паролю
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -112,16 +114,16 @@ public class SecurityConfig {
     *
     * Но если будет несколько реализаций UserDetailService, то нужно
     * */
-    @Bean
+    /*@Bean
     public AuthenticationProvider authenticationProvider() {
-        /* Создает DAO (Data Access Object) провайдер аутентификации.  Это стандартная реализация AuthenticationProvider в Spring Security. Его задача — аутентифицировать пользователя на основе логина и пароля.*/
+        *//* Создает DAO (Data Access Object) провайдер аутентификации.  Это стандартная реализация AuthenticationProvider в Spring Security. Его задача — аутентифицировать пользователя на основе логина и пароля.*//*
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        /* Устанавливает сервис для загрузки пользовательских данных. Это самая важная часть. Она "подключает" вашу кастомную логику для поиска пользователя. userDetailsService — это интерфейс, Spring автоматически находит его нашу реализацию CustomUserDeteilservice, который уже в свою очередь знает, как получить данные пользователя (логин, хеш пароля, роли/права) из базы данных или любого другого источника благодаря переопределенному методу loadUserByUsername.*/
+        *//* Устанавливает сервис для загрузки пользовательских данных. Это самая важная часть. Она "подключает" вашу кастомную логику для поиска пользователя. userDetailsService — это интерфейс, Spring автоматически находит его нашу реализацию CustomUserDeteilservice, который уже в свою очередь знает, как получить данные пользователя (логин, хеш пароля, роли/права) из базы данных или любого другого источника благодаря переопределенному методу loadUserByUsername.*//*
         authProvider.setUserDetailsService(userDetailsService);
-        /* Устанавливает кодировщик паролей. authProvider.setPassordEncoder(passwordEncoder()): Хранить пароли в открытом виде — плохая практика. Эта строка устанавливает алгоритм хеширования паролей (например, BCrypt). Когда пользователь пытается войти, этот провайдер берет введенный им пароль, хеширует его с помощью passwordEncoder и сравнивает результат с хешем, который userDetailsService получил из базы данных.*/
+        *//* Устанавливает кодировщик паролей. authProvider.setPassordEncoder(passwordEncoder()): Хранить пароли в открытом виде — плохая практика. Эта строка устанавливает алгоритм хеширования паролей (например, BCrypt). Когда пользователь пытается войти, этот провайдер берет введенный им пароль, хеширует его с помощью passwordEncoder и сравнивает результат с хешем, который userDetailsService получил из базы данных.*//*
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
-    }
+    }*/
 
     // Определяет бин менеджера аутентификации. Этот бин делает главный "движок" аутентификации доступным для всего вашего приложения.
     @Bean

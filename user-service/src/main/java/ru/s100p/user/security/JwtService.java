@@ -73,11 +73,11 @@ public class JwtService {
      * Создание и подпись JWT токена.
      *
      * <p>Процесс подписи:</p>
-     * <p>Подпись токена происходит с помощью вызова {@code .signWith(getSignKey(), SignatureAlgorithm.HS512)}.</p>
+     * <p>Подпись токена происходит с помощью вызова {@code .signWith(getSignKey(), SignatureAlgorithm.HS256)}.</p>
      * <ol>
      *     <li><b>signWith(...)</b>: Метод из библиотеки JJWT, который отвечает за подпись JWT токена.</li>
      *     <li><b>getSignKey()</b>: Внутренний метод, который предоставляет ключ для подписи. Он декодирует секретную строку (jwtSecret) из Base64 и создает на ее основе ключ для HMAC-SHA алгоритма.</li>
-     *     <li><b>SignatureAlgorithm.HS512</b>: Алгоритм шифрования (HMAC с использованием SHA-512), который используется для создания подписи.</li>
+     *     <li><b>SignatureAlgorithm.HS256</b>: Алгоритм шифрования (HMAC с использованием SHA-256), который используется для создания подписи.</li>
      * </ol>
      *
      * <p>Как это обеспечивает аутентификацию?</p>
@@ -106,8 +106,8 @@ public class JwtService {
                 .setIssuedAt(now)
                 // Установка времени истечения срока действия токена
                 .setExpiration(expiryDate)
-                // Подпись токена с использованием секретного ключа и алгоритма HS512
-                .signWith(getSignKey(), SignatureAlgorithm.HS512)
+                // Подпись токена с использованием секретного ключа и алгоритма HS256
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 // Сборка и сериализация токена в компактную строку (JWS)
                 .compact();
     }
