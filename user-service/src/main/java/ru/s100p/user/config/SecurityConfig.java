@@ -23,8 +23,7 @@ import ru.s100p.user.security.HeaderAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
 
-import static ru.s100p.shared.constants.ApiConstants.API_V1_ADMIN;
-import static ru.s100p.shared.constants.ApiConstants.API_V1_INSTRUCTOR;
+import static ru.s100p.shared.constants.ApiConstants.*;
 import static ru.s100p.shared.constants.SecurityConstants.ROLE_ADMIN;
 import static ru.s100p.shared.constants.SecurityConstants.ROLE_INSTRUCTOR;
 
@@ -70,7 +69,7 @@ public class SecurityConfig {
      * Сюда входят эндпоинты для управления аутентификацией, документация API и служебные эндпоинты.
      */
     private static final String[] PUBLIC_URLS = {
-            "/.well-known/jwks.json", // Эндпоинт для получения публичных ключей
+            "/.well-known/jwks.json", // Эндпоинт для получения публичных ключей //TODO еще раз почитать почему они могут быть публичными
             "/api/v1/auth/**",
             "/actuator/health",
             "/v3/api-docs/**",
@@ -98,14 +97,14 @@ public class SecurityConfig {
                 // Настройка правил авторизации для запросов
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll() // Разрешаем доступ к публичным URL
-                        .requestMatchers(API_V1_ADMIN + "/**").hasRole(ROLE_ADMIN) // Требуем роль ADMIN
-                        .requestMatchers(API_V1_INSTRUCTOR + "/**").hasAnyRole(ROLE_INSTRUCTOR, ROLE_ADMIN) // Требуем роль INSTRUCTOR или ADMIN
+                        .requestMatchers(INTERNAL_API_PREFIX + API_V1_ADMIN + "/**").hasRole(ROLE_ADMIN) // Требуем роль ADMIN
+                        .requestMatchers(INTERNAL_API_PREFIX + API_V1_INSTRUCTOR + "/**").hasAnyRole(ROLE_INSTRUCTOR, ROLE_ADMIN) // Требуем роль INSTRUCTOR или ADMIN
                         .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
                 )
                 // Настройка обработки исключений
                 .exceptionHandling(ex -> ex
-                        // Используем кастомный обработчик для ошибок доступа (403)
-                        .accessDeniedHandler(accessDeniedHandler)
+                                // Используем кастомный обработчик для ошибок доступа (403)
+                                .accessDeniedHandler(accessDeniedHandler)
                         // AuthenticationEntryPoint здесь больше не нужен, так как первичная ошибка 401
                         // обрабатывается на уровне шлюза или нашим HeaderAuthenticationFilter.
                 )
@@ -119,6 +118,7 @@ public class SecurityConfig {
 
     /**
      * Бин для кодирования паролей. Используется при регистрации и логине.
+     *
      * @return Реализация {@link PasswordEncoder} (BCrypt).
      */
     @Bean
@@ -128,6 +128,7 @@ public class SecurityConfig {
 
     /**
      * Бин {@link AuthenticationManager}, необходимый для процесса аутентификации (например, в AuthController).
+     *
      * @param config Конфигурация аутентификации Spring.
      * @return Стандартный AuthenticationManager.
      */
@@ -139,6 +140,7 @@ public class SecurityConfig {
     /**
      * Бин для конфигурации CORS (Cross-Origin Resource Sharing).
      * Позволяет фронтенду, запущенному на другом домене/порту, обращаться к этому API.
+     *
      * @return Источник конфигурации CORS.
      */
     @Bean

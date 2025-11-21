@@ -3,7 +3,9 @@ package ru.s100p.shared.constants;
 public final class ApiConstants {
     
     private ApiConstants() {}
-    
+
+    public static final String INTERNAL_API_PREFIX = "/internal";
+
     // API versions
     public static final String API_V1 = "/api/v1";
     public static final String API_V1_INSTRUCTOR = "/api/v1/instructor";

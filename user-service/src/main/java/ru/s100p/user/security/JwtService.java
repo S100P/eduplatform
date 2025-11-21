@@ -87,7 +87,6 @@ public class JwtService {
      *
      * @param claims Полезная нагрузка токена (ID, роли).
      * @param subject "Тема" токена (username).
-     * @param expirationMs Время жизни токена в миллисекундах.
      * @return Компактная строка JWT (JWS).
      */
     private String createToken(Map<String, Object> claims, String subject) {
