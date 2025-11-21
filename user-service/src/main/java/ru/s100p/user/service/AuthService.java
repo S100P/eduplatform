@@ -18,11 +18,14 @@ import ru.s100p.user.dto.response.AuthResponse;
 import ru.s100p.user.entity.User;
 import ru.s100p.user.mapper.UserMapper;
 import ru.s100p.user.repository.UserRepository;
+import ru.s100p.user.security.CustomUserPrincipal;
 import ru.s100p.user.security.JwtService;
 import ru.s100p.user.security.TokenBlacklistService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import static ru.s100p.shared.constants.ErrorCodes.UNAUTHENTICATED;
 
 @Slf4j
 @Service
@@ -148,19 +151,12 @@ public class AuthService {
     public void logout(String token) {
         log.info("Выход из системы");
 
-        // 1. Добавляем текущий access токен в черный список, чтобы его нельзя было использовать повторно.
         tokenBlacklistService.blacklistToken(token);
-
-        // 2. Получаем ID пользователя из SecurityContext, который был заполнен нашим HeaderAuthenticationFilter.
-        // Это надежный источник информации, так как он основан на проверенных шлюзом данных.
         Long userId = getUserIdFromSecurityContext();
-
-        // 3. Отзываем последний активный refresh токен пользователя.
         var activeTokens = refreshTokenService.getActiveTokens(userId);
         if (!activeTokens.isEmpty()) {
             refreshTokenService.revokeToken(activeTokens.get(0).token());
         }
-
         log.info("Пользователь с ID {} вышел из системы", userId);
     }
 
@@ -168,67 +164,48 @@ public class AuthService {
     public void logoutFromAllDevices(String token) {
         log.info("Выход из всех устройств");
 
-        // 1. Получаем ID пользователя из SecurityContext.
         Long userId = getUserIdFromSecurityContext();
-
-        // 2. Отзываем ВСЕ активные refresh токены этого пользователя.
         var activeTokens = refreshTokenService.getActiveTokens(userId);
         activeTokens.forEach(t -> refreshTokenService.revokeToken(t.token()));
-
-        // 3. Добавляем текущий access токен в черный список.
         tokenBlacklistService.blacklistToken(token);
-
         log.info("Пользователь с ID {} вышел из всех устройств", userId);
     }
 
     @Transactional
     public void initiatePasswordReset(String email) {
         log.info("Инициация сброса пароля для: {}", email);
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Пользователь с таким email не найден", ErrorCodes.USER_NOT_FOUND));
-
         String resetToken = UUID.randomUUID().toString();
         tokenBlacklistService.savePasswordResetToken(user.getId(), resetToken);
         emailVerificationService.sendPasswordResetEmail(user, resetToken);
-
         log.info("Email для сброса пароля отправлен на: {}", email);
     }
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
         log.info("Сброс пароля по токену");
-
         Long userId = tokenBlacklistService.validatePasswordResetToken(token);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
-
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-
         tokenBlacklistService.deletePasswordResetToken(token);
-
         var activeTokens = refreshTokenService.getActiveTokens(user.getId());
         activeTokens.forEach(t -> refreshTokenService.revokeToken(t.token()));
-
         log.info("Пароль успешно сброшен для пользователя: {}", user.getUsername());
     }
 
     @Transactional
     public void verifyEmail(String token) {
         log.info("Верификация email по токену");
-
         Long userId = emailVerificationService.validateEmailToken(token);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
-
         user.setIsEmailVerified(true);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-
         log.info("Email верифицирован для пользователя: {}", user.getEmail());
     }
 
@@ -236,13 +213,10 @@ public class AuthService {
     public void resendVerificationEmail(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("Пользователь не найден", ErrorCodes.USER_NOT_FOUND));
-
         if (user.getIsEmailVerified()) {
             throw new BusinessException("Email уже подтвержден", "EMAIL_ALREADY_VERIFIED");
         }
-
         emailVerificationService.sendVerificationEmail(user);
-
         log.info("Письмо для верификации отправлено повторно: {}", user.getEmail());
     }
 
@@ -259,37 +233,16 @@ public class AuthService {
     // ===== Вспомогательные методы =====
 
     private UserDetails createUserDetails(User user) {
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPasswordHash())
-                .authorities(getUserAuthorities(user))
-                .accountExpired(false)
-                .accountLocked(!user.getIsActive())
-                .credentialsExpired(false)
-                .disabled(!user.getIsActive())
-                .build();
+        // Заменено создание стандартного User на наш CustomUserPrincipal,
+        // чтобы обеспечить наличие ID и избежать ClassCastException.
+        return CustomUserPrincipal.create(user);
     }
 
-    private String[] getUserAuthorities(User user) {
-        return user.getRoles().stream()
-                .map(ur -> "ROLE_" + ur.getRole().getName())
-                .toArray(String[]::new);
-    }
-
-    /**
-     * Извлекает ID пользователя из SecurityContext.
-     * Это предпочтительный способ получения информации о текущем пользователе
-     * в методах, защищенных новой архитектурой безопасности.
-     *
-     * @return ID текущего аутентифицированного пользователя.
-     * @throws BusinessException если информация об аутентификации отсутствует.
-     */
     private Long getUserIdFromSecurityContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BusinessException("Отсутствует информация об аутентификации", ErrorCodes.UNAUTHORIZED);
+            throw new BusinessException("Отсутствует информация об аутентификации", UNAUTHENTICATED);
         }
-        // Principal теперь - это строка с ID пользователя, которую мы установили в HeaderAuthenticationFilter
         return Long.parseLong(authentication.getName());
     }
 }

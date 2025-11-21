@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * Кастомная реализация UserDetails
  * Содержит дополнительную информацию о пользователе
  */
-class CustomUserPrincipal implements UserDetails {
+public class CustomUserPrincipal implements UserDetails {
 
     private final Long id;
     private final String username;

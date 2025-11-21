@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -60,6 +61,10 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Основной метод фильтра, который выполняется для каждого запроса.
+     *
+     * <p>
+     * HeaderAuthenticationFilter наследуется от OncePerRequestFilter, Spring ищет реализацию OncePerRequestFilter и запустит выполнение переопределенного doFilterInternal автоматически.
+     * <p>
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -102,12 +107,32 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             // Создаем токен аутентификации. В качестве "principal" используем userId. Пароль не нужен (null).
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
+            // Добавляем детали запроса (IP адрес)
+            /*
+                    Этот объект извлекает из request (вашего HTTP-запроса) и сохраняет в себе:
+◦
+                    IP-адрес клиента, с которого пришел запрос.
+◦
+                    ID сессии, если она используется.
+                    Для чего это нужно?
+                    Эта информация не является критичной для самой аутентификации, но она очень полезна для:
+                    1.
+                    Аудита и логирования: Вы можете записывать в логи, с какого IP-адреса пользователь совершал те или иные действия. Это помогает при расследовании инцидентов безопасности.
+                    2.
+                    Дополнительных проверок безопасности: Теоретически, вы можете реализовать логику, которая, например, запрещает одновременное использование одного и того же аккаунта с разных IP-адресов или отслеживает подозрительную активность.
+
+                    Проще говоря, это обогащение данных об аутентифицированном пользователе контекстом самого запроса.
+            */
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
             // Помещаем объект аутентификации в SecurityContext.
             // Теперь Spring Security знает, что пользователь аутентифицирован и имеет определенные роли.
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-            // В реальном приложении здесь должно быть логирование.
+            //TODO В реальном приложении здесь должно быть логирование.
             sendError(response, "Error processing internal authentication");
             return;
         }
@@ -115,6 +140,27 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         // Передаем запрос дальше по цепочке фильтров.
         filterChain.doFilter(request, response);
     }
+
+    /**
+     * Определяем, нужно ли пропустить фильтр для данного запроса
+     * Можно пропускать для публичных endpoints
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        // Список путей, которые не требуют JWT проверки
+        return path.startsWith("/api/v1/auth/register") ||
+                path.startsWith("/api/v1/auth/login") ||
+                path.startsWith("/api/v1/auth/refresh") ||
+                path.startsWith("/api/v1/auth/forgot-password") ||
+                path.startsWith("/api/v1/auth/reset-password") ||
+                path.startsWith("/api/v1/auth/verify-email") ||
+                path.startsWith("/actuator/health") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs");
+    }
+
 
     /**
      * Проверяет, что время в заголовке `X-Auth-Exp` еще не наступило.

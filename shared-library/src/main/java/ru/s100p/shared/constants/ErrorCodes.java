@@ -3,11 +3,11 @@ package ru.s100p.shared.constants;
 // ErrorCodes.java - коды ошибок
 public final class ErrorCodes {
 
+    private ErrorCodes() {}
+
     // Security related errors
     public static final String INVALID_TOKEN = "INVALID_TOKEN";
-    public static final String UNAUTHORIZED = "UNAUTHORIZED";
-
-    private ErrorCodes() {}
+    public static final String UNAUTHENTICATED = "UNAUTHENTICATED";
 
     // User related errors
     public static final String USER_NOT_FOUND = "USER_NOT_FOUND";

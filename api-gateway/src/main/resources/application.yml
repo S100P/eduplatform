@@ -1,7 +1,6 @@
 server:
   port: 8018
 
-#ОТРЕДАКТИПРОВАТЬ ПОРТЫ МОДУЛЕЙ
 spring:
   application:
     name: api-gateway
@@ -23,8 +22,13 @@ spring:
             - Path=/api/v1/auth/login
           filters:
             - RewritePath=/api/v1/auth/login, /api/v1/auth/login
-            # После успешного логина генерируем JWT здесь
-            - GenerateJWT
+            
+        - id: jwks
+          uri: http://localhost:8012
+          predicates:
+            - Path=/.well-known/jwks.json
+          filters:
+            - RewritePath=/.well-known/jwks.json, /.well-known/jwks.json
 
         # ====== USER SERVICE ROUTES (защищенные) ======
         - id: user-service
@@ -56,11 +60,11 @@ spring:
             - JwtAuthentication
             - RewritePath=/api/v1/courses/(?<segment>.*), /internal/courses/${segment}
             # Фильтр для проверки роли INSTRUCTOR при создании курса
-            - name: Authentication
-              args:
-                requiredRoles:
-                  - ROLE_INSTRUCTOR
-                  - ROLE_ADMIN
+#            - name: Authentication
+#              args:
+#                requiredRoles:
+#                  - ROLE_INSTRUCTOR
+#                  - ROLE_ADMIN
 
         # ====== ENROLLMENT SERVICE ROUTES ======
         - id: enrollment-service
@@ -71,10 +75,10 @@ spring:
             - JwtAuthentication
             - RewritePath=/api/v1/enrollments/(?<segment>.*), /internal/enrollments/${segment}
             # Только студенты могут записываться на курсы
-            - name: Authentication
-              args:
-                requiredRoles:
-                  - ROLE_STUDENT
+#            - name: Authentication
+#              args:
+#                requiredRoles:
+#                  - ROLE_STUDENT
 
         # ====== PAYMENT SERVICE ROUTES ======
         - id: payment-service
@@ -95,32 +99,33 @@ spring:
 
 # JWT конфигурация
 jwt:
-  secret: ${JWT_SECRET:mySecretKey12345678901234567890123456789012345678901234567890}
-  expiration: 3600000 # 1 час
-  refresh:
-    expiration: 604800000 # 7 дней
+  # Адрес, по которому можно получить публичные ключи для проверки JWT.
+  jwks-uri: http://localhost:8012/.well-known/jwks.json
+  # Секрет для внутреннего HMAC-шифрования заголовков.
   internal-secret: ${INTERNAL_SECRET:anotherStrongSecretKeyForInternalCommunication0987654321}
 
 # Настройки безопасности
-security:
-  # IP адреса, которым разрешены внутренние вызовы
-  internal-ips:
-    - 127.0.0.1
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
+#security:
+#  # IP адреса, которым разрешены внутренние вызовы
+#  internal-ips:
+#    - 127.0.0.1
+#    - 10.0.0.0/8
+#    - 172.16.0.0/12
+#    - 192.168.0.0/16
 
 # Rate Limiting
 rate-limiter:
   enabled: true
   default-replenish-rate: 10
   default-burst-capacity: 20
-
   # Специфичные лимиты для endpoints
   endpoints:
     - path: /api/v1/auth/login
       replenish-rate: 5
       burst-capacity: 10
     - path: /api/v1/payments/**
+      replenish-rate: 5
+      burst-capacity: 5
+    - path: /api/v1/refresh
       replenish-rate: 5
       burst-capacity: 5

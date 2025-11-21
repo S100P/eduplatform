@@ -23,7 +23,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.5.7</spring-boot.version>
+        <spring-boot.version>3.5.8</spring-boot.version>
     </properties>
 
     <dependencyManagement>
@@ -37,10 +37,17 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- WebFlux для использования WebClient -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <version>4.0.0-M3</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-gateway</artifactId>
-                <version>4.3.0</version>
+                <version>4.3.2</version>
             </dependency>
 
             <!-- Другие управляемые зависимости -->
@@ -88,6 +95,13 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>0.11.5</version>
                 <scope>runtime</scope>
+            </dependency>
+
+            <!-- Зависимость для работы с JWK (JSON Web Key) -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>9.31</version> <!-- Используйте актуальную версию -->
             </dependency>
 
         </dependencies>

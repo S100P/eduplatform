@@ -70,7 +70,8 @@ public class SecurityConfig {
      * Сюда входят эндпоинты для управления аутентификацией, документация API и служебные эндпоинты.
      */
     private static final String[] PUBLIC_URLS = {
-            "/api/v1/auth/**", // Все эндпоинты аутентификации (логин, регистрация и т.д.)
+            "/.well-known/jwks.json", // Эндпоинт для получения публичных ключей
+            "/api/v1/auth/**",
             "/actuator/health",
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -110,6 +111,7 @@ public class SecurityConfig {
                 )
                 // Добавляем наш кастомный фильтр ПЕРЕД стандартным фильтром Spring.
                 // Он должен выполниться раньше, чтобы успеть заполнить SecurityContext.
+                // Под капотом запускается headerAuthenticationFilter.doFilterInternal() (в том числе .shouldNotFilter, если есть), который проверяет заголовки. Spring делает это автоматические благодаря тому, что HeaderAuthenticationFilter наследуется от OncePerRequestFilter
                 .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

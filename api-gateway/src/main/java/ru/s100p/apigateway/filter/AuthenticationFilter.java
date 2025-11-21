@@ -1,6 +1,7 @@
 package ru.s100p.apigateway.filter;
 
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Основной фильтр аутентификации для Spring Cloud Gateway.
@@ -40,6 +42,7 @@ import java.util.Base64;
  */
 @RefreshScope // Позволяет обновлять бин (например, при изменении jwt.internal-secret в Spring Cloud Config) без перезапуска приложения.
 @Component
+@Slf4j
 public class AuthenticationFilter implements GatewayFilter {
 
     private final JwtUtil jwtUtil;
@@ -77,17 +80,18 @@ public class AuthenticationFilter implements GatewayFilter {
 
         final String token = getAuthHeader(request);
 
-        // 2. Валидируем JWT с помощью JwtUtil.
+        // 2. Валидируем JWT с помощью JwtUtil. isInvalid теперь выполняет полную проверку подписи и срока действия через JWKS
         if (jwtUtil.isInvalid(token)) {
-            return this.onError(exchange, "Authorization header is invalid", HttpStatus.UNAUTHORIZED);
+            return this.onError(exchange, "Authorization header is invalid or expired", HttpStatus.UNAUTHORIZED);
         }
 
-        ServerWebExchange modifiedExchange;
+        ServerWebExchange modifiedExchange; //TODO Прояснить что за класс, для чего, но как буд-то бы для обмена данными запроса и валидации между фильтрами в разных сервисах
         try {
-            // 3. Извлекаем данные из JWT.
+            // 3. Извлекаем данные из JWT. getAllClaimsFromToken теперь тоже может выбросить исключение при ошибке парсинга
             Claims claims = jwtUtil.getAllClaimsFromToken(token);
             String userId = String.valueOf(claims.get("id"));
-            String userRoles = String.valueOf(claims.get("roles"));
+            // Nimbus возвращает List, а не строку. Преобразуем в строку.
+            String userRoles = String.join(",", (List<String>) claims.get("roles"));
             String expiration = String.valueOf(claims.getExpiration().getTime());
 
             // 4. Готовим данные для подписи.
@@ -119,11 +123,11 @@ public class AuthenticationFilter implements GatewayFilter {
             modifiedExchange = exchange.mutate().request(newRequest).build();
 
         } catch (Exception e) {
-            // В реальном приложении здесь должно быть логирование ошибки.
-            return this.onError(exchange, "Failed to create internal signature", HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Ошибка при обработке токена или создании внутренней подписи", e);
+            return this.onError(exchange, "Invalid token structure or failed to create internal signature", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        // 6. Передаем управление следующему фильтру в цепочке с уже измененным exchange.
+        // 6. Передаем управление следующему фильтру в цепочке с уже измененным exchange. //TODO какому следующему фильтру? в user-service?
         return chain.filter(modifiedExchange);
     }
 
@@ -133,6 +137,8 @@ public class AuthenticationFilter implements GatewayFilter {
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(httpStatus);
+        // В реальном приложении можно добавить более детальное логирование
+        log.warn("Ошибка аутентификации на шлюзе: {}, Status: {}", err, httpStatus);
         return response.setComplete();
     }
 

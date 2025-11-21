@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class TokenBlacklistService {
-
+    //TODO перенести в shared
     //TODO Временное хранилище (в продакшене использовать Redis)
     private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, Long> passwordResetTokens = new ConcurrentHashMap<>();
