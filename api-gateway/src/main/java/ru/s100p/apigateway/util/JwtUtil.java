@@ -1,8 +1,9 @@
 package ru.s100p.apigateway.util;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -12,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.Date;
 import java.util.Map;
 
@@ -28,16 +29,24 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    private final String jwksUri;
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
 
     public JwtUtil(@Value("${jwt.jwks-uri}") String jwksUri) {
-        this.jwksUri = jwksUri;
         this.jwtProcessor = new DefaultJWTProcessor<>();
 
         try {
+            // Создаем и настраиваем retriever с таймаутами
+            DefaultResourceRetriever resourceRetriever = new DefaultResourceRetriever();
+            resourceRetriever.setConnectTimeout(1000);
+            resourceRetriever.setReadTimeout(1000);
+
             // Создаем источник ключей, который будет обращаться к нашему user-service
-            JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(new URL(this.jwksUri));
+            // Используем современный JWKSourceBuilder для настройки кэширования и таймаутов
+            JWKSource<SecurityContext> keySource = JWKSourceBuilder
+                    .create(URI.create(jwksUri).toURL(), resourceRetriever)
+                    .cache(true)
+                    .build();
+
             // Настраиваем процессор для использования этих ключей
             // (библиотека сама найдет нужный ключ для проверки подписи)
             com.nimbusds.jose.proc.JWSKeySelector<SecurityContext> keySelector =
