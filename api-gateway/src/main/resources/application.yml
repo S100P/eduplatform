@@ -38,8 +38,8 @@ spring:
           filters:
             # Проверяем JWT и добавляем заголовки
             - JwtAuthentication
-            # Переписываем путь для внутреннего API
-            - RewritePath=/api/v1/admin/users/(?<segment>.*), /internal/api/v1/admin/users/${segment}
+            # Переписываем путь для внутреннего API. Через (?<segment>/.*)?: Мы захватываем в сегмент сам слэш и все, что после него (/.*). И самое главное — с помощью знака ? в конце мы делаем всю эту группу необязательной. В результате захват произойдет даже если запрос будет на /users, /users/ или /users/{id}
+            - RewritePath=/api/v1/admin/users(?<segment>/.*)?, /internal/api/v1/admin/users${segment}
             # Добавляем внутренние заголовки
             - AddRequestHeader=X-Service-Name, api-gateway
             - AddRequestHeader=X-Request-Id, ${random.value}
